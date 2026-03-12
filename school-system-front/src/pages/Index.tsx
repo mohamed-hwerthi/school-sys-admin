@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
+import { useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Mail, Lock, GraduationCap, ArrowRight, Sparkles, Loader2, AlertCircle } from "lucide-react";
+import { Mail, Lock, GraduationCap, ArrowRight, Sparkles, Loader2, AlertCircle, ShieldCheck, ArrowLeft } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import schoolHero from "@/assets/school-hero.png";
 
@@ -16,12 +16,17 @@ const item = {
 
 const Index = () => {
   const navigate = useNavigate();
-  const { login, isAuthenticated } = useAuth();
+  const { login, verify2FA, cancelTwoFactor, isAuthenticated, twoFactorPending } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [focused, setFocused] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // 2FA state
+  const [totpCode, setTotpCode] = useState("");
+  const [twoFaLoading, setTwoFaLoading] = useState(false);
+  const totpInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -29,18 +34,55 @@ const Index = () => {
     }
   }, [isAuthenticated, navigate]);
 
+  // Focus TOTP input when 2FA step appears
+  useEffect(() => {
+    if (twoFactorPending && totpInputRef.current) {
+      totpInputRef.current.focus();
+    }
+  }, [twoFactorPending]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setLoading(true);
     try {
-      await login({ email, password });
-      navigate("/dashboard");
+      const response = await login({ email, password });
+      if (!response.twoFactorRequired) {
+        navigate("/dashboard");
+      }
+      // If 2FA required, twoFactorPending state will be set by useAuth
     } catch (err: any) {
       setError(err.message || "Identifiants incorrects");
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleVerify2FA = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!twoFactorPending) return;
+    setError(null);
+    setTwoFaLoading(true);
+    try {
+      await verify2FA(twoFactorPending.userId, totpCode);
+      navigate("/dashboard");
+    } catch (err: any) {
+      setError(err.message || "Code invalide");
+    } finally {
+      setTwoFaLoading(false);
+    }
+  };
+
+  const handleBackToLogin = () => {
+    cancelTwoFactor();
+    setTotpCode("");
+    setError(null);
+  };
+
+  // Handle TOTP input — only allow digits, max 6
+  const handleTotpChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value.replace(/\D/g, "").slice(0, 6);
+    setTotpCode(val);
   };
 
   return (
@@ -126,7 +168,7 @@ const Index = () => {
           </div>
         </div>
 
-        {/* Right: Login Form */}
+        {/* Right: Login Form / 2FA Form */}
         <motion.div
           variants={container}
           initial="hidden"
@@ -151,95 +193,183 @@ const Index = () => {
             </div>
           </motion.div>
 
-          <motion.div variants={item} className="mb-8 text-center">
-            <h2 className="font-heading text-2xl font-bold text-foreground">
-              Bon retour ! 👋
-            </h2>
-            <p className="mt-1.5 text-sm text-muted-foreground">
-              Connectez-vous à votre espace
-            </p>
-          </motion.div>
+          {/* ── 2FA Verification Step ── */}
+          {twoFactorPending ? (
+            <>
+              <motion.div variants={item} className="mb-8 text-center">
+                <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10">
+                  <ShieldCheck className="h-7 w-7 text-primary" />
+                </div>
+                <h2 className="font-heading text-2xl font-bold text-foreground">
+                  Vérification 2FA
+                </h2>
+                <p className="mt-1.5 text-sm text-muted-foreground">
+                  Saisissez le code de votre application d'authentification
+                </p>
+              </motion.div>
 
-          {error && (
-            <motion.div
-              initial={{ opacity: 0, y: -8 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mb-4 flex w-full max-w-[280px] items-center gap-2 rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive"
-            >
-              <AlertCircle className="h-4 w-4 shrink-0" />
-              {error}
-            </motion.div>
+              {error && (
+                <motion.div
+                  initial={{ opacity: 0, y: -8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mb-4 flex w-full max-w-[280px] items-center gap-2 rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+                >
+                  <AlertCircle className="h-4 w-4 shrink-0" />
+                  {error}
+                </motion.div>
+              )}
+
+              <form onSubmit={handleVerify2FA} className="w-full max-w-[280px] space-y-4">
+                <motion.div variants={item} className="relative">
+                  <label className="mb-1.5 block text-xs font-semibold text-foreground">
+                    Code à 6 chiffres
+                  </label>
+                  <div className="relative">
+                    <ShieldCheck className={`absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transition-colors duration-200 ${focused === "totp" ? "text-primary" : "text-muted-foreground"}`} />
+                    <input
+                      ref={totpInputRef}
+                      type="text"
+                      inputMode="numeric"
+                      autoComplete="one-time-code"
+                      placeholder="000000"
+                      value={totpCode}
+                      onFocus={() => setFocused("totp")}
+                      onBlur={() => setFocused(null)}
+                      onChange={handleTotpChange}
+                      maxLength={6}
+                      className="w-full rounded-xl border border-border bg-muted/50 py-3 pl-10 pr-4 text-center text-lg font-mono font-bold tracking-[0.3em] text-foreground placeholder:text-muted-foreground/60 transition-all duration-200 focus:border-primary focus:bg-card focus:outline-none focus:shadow-input-focus"
+                    />
+                  </div>
+                </motion.div>
+
+                <motion.div variants={item}>
+                  <motion.button
+                    whileHover={twoFaLoading ? {} : { scale: 1.015, y: -1 }}
+                    whileTap={twoFaLoading ? {} : { scale: 0.98 }}
+                    type="submit"
+                    disabled={twoFaLoading || totpCode.length !== 6}
+                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-primary py-3 text-sm font-semibold text-primary-foreground shadow-btn transition-shadow hover:shadow-lg disabled:opacity-80"
+                  >
+                    {twoFaLoading ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Vérification...
+                      </>
+                    ) : (
+                      <>
+                        Vérifier
+                        <ArrowRight className="h-4 w-4" />
+                      </>
+                    )}
+                  </motion.button>
+                </motion.div>
+
+                <motion.div variants={item} className="text-center">
+                  <button
+                    type="button"
+                    onClick={handleBackToLogin}
+                    className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary/80 transition-colors"
+                  >
+                    <ArrowLeft className="h-3 w-3" />
+                    Retour à la connexion
+                  </button>
+                </motion.div>
+              </form>
+            </>
+          ) : (
+            /* ── Normal Login Step ── */
+            <>
+              <motion.div variants={item} className="mb-8 text-center">
+                <h2 className="font-heading text-2xl font-bold text-foreground">
+                  Bon retour !
+                </h2>
+                <p className="mt-1.5 text-sm text-muted-foreground">
+                  Connectez-vous à votre espace
+                </p>
+              </motion.div>
+
+              {error && (
+                <motion.div
+                  initial={{ opacity: 0, y: -8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mb-4 flex w-full max-w-[280px] items-center gap-2 rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+                >
+                  <AlertCircle className="h-4 w-4 shrink-0" />
+                  {error}
+                </motion.div>
+              )}
+
+              <form onSubmit={handleSubmit} className="w-full max-w-[280px] space-y-4">
+                {/* Email */}
+                <motion.div variants={item} className="relative">
+                  <label className="mb-1.5 block text-xs font-semibold text-foreground">
+                    E-mail
+                  </label>
+                  <div className="relative">
+                    <Mail className={`absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transition-colors duration-200 ${focused === "email" ? "text-primary" : "text-muted-foreground"}`} />
+                    <input
+                      type="email"
+                      placeholder="nom@ecole.fr"
+                      value={email}
+                      onFocus={() => setFocused("email")}
+                      onBlur={() => setFocused(null)}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="w-full rounded-xl border border-border bg-muted/50 py-3 pl-10 pr-4 text-sm font-medium text-foreground placeholder:text-muted-foreground/60 transition-all duration-200 focus:border-primary focus:bg-card focus:outline-none focus:shadow-input-focus"
+                    />
+                  </div>
+                </motion.div>
+
+                {/* Password */}
+                <motion.div variants={item} className="relative">
+                  <label className="mb-1.5 block text-xs font-semibold text-foreground">
+                    Mot de passe
+                  </label>
+                  <div className="relative">
+                    <Lock className={`absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transition-colors duration-200 ${focused === "pass" ? "text-primary" : "text-muted-foreground"}`} />
+                    <input
+                      type="password"
+                      placeholder="••••••••"
+                      value={password}
+                      onFocus={() => setFocused("pass")}
+                      onBlur={() => setFocused(null)}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="w-full rounded-xl border border-border bg-muted/50 py-3 pl-10 pr-4 text-sm font-medium text-foreground placeholder:text-muted-foreground/60 transition-all duration-200 focus:border-primary focus:bg-card focus:outline-none focus:shadow-input-focus"
+                    />
+                  </div>
+                </motion.div>
+
+                {/* Forgot password */}
+                <motion.div variants={item} className="text-right">
+                  <Link to="/forgot-password" className="text-xs font-semibold text-primary hover:text-primary/80 transition-colors">
+                    Mot de passe oublié ?
+                  </Link>
+                </motion.div>
+
+                {/* Submit */}
+                <motion.div variants={item}>
+                  <motion.button
+                    whileHover={loading ? {} : { scale: 1.015, y: -1 }}
+                    whileTap={loading ? {} : { scale: 0.98 }}
+                    type="submit"
+                    disabled={loading}
+                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-primary py-3 text-sm font-semibold text-primary-foreground shadow-btn transition-shadow hover:shadow-lg disabled:opacity-80"
+                  >
+                    {loading ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Connexion en cours...
+                      </>
+                    ) : (
+                      <>
+                        Se connecter
+                        <ArrowRight className="h-4 w-4" />
+                      </>
+                    )}
+                  </motion.button>
+                </motion.div>
+              </form>
+            </>
           )}
-
-          <form onSubmit={handleSubmit} className="w-full max-w-[280px] space-y-4">
-            {/* Email */}
-            <motion.div variants={item} className="relative">
-              <label className="mb-1.5 block text-xs font-semibold text-foreground">
-                E-mail
-              </label>
-              <div className="relative">
-                <Mail className={`absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transition-colors duration-200 ${focused === "email" ? "text-primary" : "text-muted-foreground"}`} />
-                <input
-                  type="email"
-                  placeholder="nom@ecole.fr"
-                  value={email}
-                  onFocus={() => setFocused("email")}
-                  onBlur={() => setFocused(null)}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full rounded-xl border border-border bg-muted/50 py-3 pl-10 pr-4 text-sm font-medium text-foreground placeholder:text-muted-foreground/60 transition-all duration-200 focus:border-primary focus:bg-card focus:outline-none focus:shadow-input-focus"
-                />
-              </div>
-            </motion.div>
-
-            {/* Password */}
-            <motion.div variants={item} className="relative">
-              <label className="mb-1.5 block text-xs font-semibold text-foreground">
-                Mot de passe
-              </label>
-              <div className="relative">
-                <Lock className={`absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transition-colors duration-200 ${focused === "pass" ? "text-primary" : "text-muted-foreground"}`} />
-                <input
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onFocus={() => setFocused("pass")}
-                  onBlur={() => setFocused(null)}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full rounded-xl border border-border bg-muted/50 py-3 pl-10 pr-4 text-sm font-medium text-foreground placeholder:text-muted-foreground/60 transition-all duration-200 focus:border-primary focus:bg-card focus:outline-none focus:shadow-input-focus"
-                />
-              </div>
-            </motion.div>
-
-            {/* Forgot password */}
-            <motion.div variants={item} className="text-right">
-              <a href="#" className="text-xs font-semibold text-primary hover:text-primary/80 transition-colors">
-                Mot de passe oublié ?
-              </a>
-            </motion.div>
-
-            {/* Submit */}
-            <motion.div variants={item}>
-              <motion.button
-                whileHover={loading ? {} : { scale: 1.015, y: -1 }}
-                whileTap={loading ? {} : { scale: 0.98 }}
-                type="submit"
-                disabled={loading}
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-primary py-3 text-sm font-semibold text-primary-foreground shadow-btn transition-shadow hover:shadow-lg disabled:opacity-80"
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Connexion en cours...
-                  </>
-                ) : (
-                  <>
-                    Se connecter
-                    <ArrowRight className="h-4 w-4" />
-                  </>
-                )}
-              </motion.button>
-            </motion.div>
-          </form>
 
           {/* Divider + stats */}
           <motion.div variants={item} className="mt-10 w-full max-w-[280px]">

@@ -55,6 +55,8 @@ const DisciplinePage = lazy(() => import("./pages/Discipline"));
 const AnneeScolairePage = lazy(() => import("./pages/AnneeScolaire"));
 const ContratsPage = lazy(() => import("./pages/Contrats"));
 const FacturesPage = lazy(() => import("./pages/Factures"));
+const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 
 const PageLoader = () => (
   <div className="flex h-[50vh] items-center justify-center">
@@ -71,6 +73,8 @@ const App = () => (
         <AuthProvider>
           <Routes>
             <Route path="/" element={<Index />} />
+            <Route path="/forgot-password" element={<Suspense fallback={<PageLoader />}><ForgotPassword /></Suspense>} />
+            <Route path="/reset-password" element={<Suspense fallback={<PageLoader />}><ResetPassword /></Suspense>} />
             <Route path="/forbidden" element={<Forbidden />} />
             <Route
               path="/dashboard"

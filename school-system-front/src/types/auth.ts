@@ -21,8 +21,36 @@ export interface LoginResponse {
   tokenType: string;
   expiresIn: number;
   user: AuthUser;
+  // 2FA fields
+  twoFactorRequired: boolean;
+  twoFactorUserId: number | null;
 }
 
 export interface RefreshTokenRequest {
   refreshToken: string;
+}
+
+// 2FA types
+export interface Enable2FAResponse {
+  secret: string;
+  qrCodeUri: string;
+}
+
+export interface Verify2FARequest {
+  code: string;
+}
+
+export interface Verify2FALoginRequest {
+  userId: number;
+  code: string;
+}
+
+// Session management types
+export interface Session {
+  id: number;
+  deviceName: string;
+  ipAddress: string;
+  lastUsedAt: string;
+  createdAt: string;
+  current: boolean;
 }
