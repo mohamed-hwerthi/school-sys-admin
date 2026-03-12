@@ -60,6 +60,12 @@ const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const VitrineSite = lazy(() => import("./pages/VitrineSite"));
 const VitrineAdminPage = lazy(() => import("./pages/VitrineAdmin"));
 
+// Bulletin pages (BUL-003 to BUL-007)
+const BulletinTemplatesPage = lazy(() => import("./pages/BulletinTemplates"));
+const BulletinsMassePage = lazy(() => import("./pages/BulletinsMasse"));
+const StatsReussitePage = lazy(() => import("./pages/StatsReussite"));
+const ComparatifPerformancesPage = lazy(() => import("./pages/ComparatifPerformances"));
+
 const PageLoader = () => (
   <div className="flex h-[50vh] items-center justify-center">
     <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -140,6 +146,12 @@ const App = () => (
                 <Route path="evaluations" element={<Evaluations />} />
                 <Route path="carnets" element={<CarnetNotes />} />
                 <Route path="annee-scolaire" element={<AnneeScolairePage />} />
+
+                {/* Bulletins (BUL-003 to BUL-007) */}
+                <Route path="bulletin-templates" element={<BulletinTemplatesPage />} />
+                <Route path="bulletins-masse" element={<BulletinsMassePage />} />
+                <Route path="stats-reussite" element={<StatsReussitePage />} />
+                <Route path="comparatif" element={<ComparatifPerformancesPage />} />
 
                 {/* Vie scolaire */}
                 <Route path="discipline" element={<DisciplinePage />} />

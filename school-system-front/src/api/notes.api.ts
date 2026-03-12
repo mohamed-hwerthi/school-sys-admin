@@ -27,6 +27,35 @@ export interface MoyenneDTO {
   moyenneGenerale: number;
 }
 
+// NOT-007: Bareme
+export interface BaremeDTO {
+  id?: number;
+  label: string;
+  noteMax: number;
+  noteMin: number;
+  notePassage: number;
+  actif: boolean;
+}
+
+// NOT-009: Competences
+export interface CompetenceDTO {
+  id?: number;
+  moduleId: number;
+  label: string;
+  description?: string;
+}
+
+// NOT-010: Evaluation competences
+export interface EvaluationCompetenceDTO {
+  id?: number;
+  eleveId: number;
+  competenceId: number;
+  competenceLabel?: string;
+  examenId: number;
+  niveau: "NON_ATTEINT" | "EN_COURS" | "ATTEINT" | "DEPASSE";
+  commentaire?: string;
+}
+
 const BASE = "/notes";
 
 export const notesApi = {
@@ -51,4 +80,48 @@ export const notesApi = {
   },
 
   delete: (id: number) => api.delete(`${BASE}/${id}`),
+
+  // Baremes
+  getBaremes: async (): Promise<BaremeDTO[]> => {
+    const res = await api.get<BaremeDTO[]>(`${BASE}/baremes`);
+    return res.data;
+  },
+
+  createBareme: async (dto: BaremeDTO): Promise<BaremeDTO> => {
+    const res = await api.post<BaremeDTO>(`${BASE}/baremes`, dto);
+    return res.data;
+  },
+
+  updateBareme: async (id: number, dto: BaremeDTO): Promise<BaremeDTO> => {
+    const res = await api.put<BaremeDTO>(`${BASE}/baremes/${id}`, dto);
+    return res.data;
+  },
+
+  // Competences
+  getCompetences: async (moduleId?: number): Promise<CompetenceDTO[]> => {
+    const params = moduleId ? `?moduleId=${moduleId}` : "";
+    const res = await api.get<CompetenceDTO[]>(`${BASE}/competences${params}`);
+    return res.data;
+  },
+
+  createCompetence: async (dto: CompetenceDTO): Promise<CompetenceDTO> => {
+    const res = await api.post<CompetenceDTO>(`${BASE}/competences`, dto);
+    return res.data;
+  },
+
+  deleteCompetence: async (id: number): Promise<void> => {
+    await api.delete(`${BASE}/competences/${id}`);
+  },
+
+  // Evaluations competences
+  getEvaluationsCompetences: async (examenId: number, eleveId?: number): Promise<EvaluationCompetenceDTO[]> => {
+    const params = eleveId ? `?examenId=${examenId}&eleveId=${eleveId}` : `?examenId=${examenId}`;
+    const res = await api.get<EvaluationCompetenceDTO[]>(`${BASE}/evaluations-competences${params}`);
+    return res.data;
+  },
+
+  createEvaluationCompetence: async (dto: EvaluationCompetenceDTO): Promise<EvaluationCompetenceDTO> => {
+    const res = await api.post<EvaluationCompetenceDTO>(`${BASE}/evaluations-competences`, dto);
+    return res.data;
+  },
 };
