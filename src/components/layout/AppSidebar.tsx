@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useLocation, Link } from "react-router-dom";
 import { ChevronLeft, ChevronDown } from "lucide-react";
 import {
@@ -27,6 +27,19 @@ export function AppSidebar() {
   const location = useLocation();
   const { toggleSidebar } = useSidebar();
   const { user } = useAuth();
+
+  // SEC-012: Filter sidebar sections based on user role
+  const filteredSections = useMemo(() => {
+    const userRole = user?.role ?? "";
+    return sidebarSections
+      .map((section) => ({
+        ...section,
+        items: section.items.filter(
+          (item) => !item.roles || item.roles.length === 0 || item.roles.includes(userRole)
+        ),
+      }))
+      .filter((section) => section.items.length > 0);
+  }, [user?.role]);
 
   const [openSections, setOpenSections] = useState<Record<string, boolean>>(
     () =>
@@ -71,7 +84,7 @@ export function AppSidebar() {
 
       {/* ── Nav ── */}
       <SidebarContent className="px-3">
-        {sidebarSections.map((section, idx) => (
+        {filteredSections.map((section, idx) => (
           <Collapsible
             key={section.label}
             open={openSections[section.label]}
