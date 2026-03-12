@@ -1,5 +1,5 @@
 import api from "./axios";
-import type { EmploiDuTempsEntry, Creneau, Conflit } from "@/types/emploi-du-temps";
+import type { EmploiDuTempsEntry, Creneau, Conflit, Remplacement, RemplacementRequest } from "@/types/emploi-du-temps";
 
 const BASE = "/emploi-du-temps";
 
@@ -20,17 +20,37 @@ export const emploiDuTempsApi = {
   },
 
   checkConflits: async (classeId: number, entries: EmploiDuTempsEntry[]): Promise<Conflit[]> => {
-    const res = await api.post<Conflit[]>(`${BASE}/check-conflits`, { classeId, entries });
+    const res = await api.post<Conflit[]>(`${BASE}/check-conflits`, entries);
     return res.data;
   },
 
+  // Creneaux
   getCreneaux: async (): Promise<Creneau[]> => {
-    const res = await api.get<Creneau[]>(`${BASE}/creneaux`);
+    const res = await api.get<Creneau[]>("/creneaux");
     return res.data;
   },
 
   createCreneau: async (data: Omit<Creneau, "id">): Promise<Creneau> => {
-    const res = await api.post<Creneau>(`${BASE}/creneaux`, data);
+    const res = await api.post<Creneau>("/creneaux", data);
     return res.data;
+  },
+
+  deleteCreneau: async (id: number): Promise<void> => {
+    await api.delete(`/creneaux/${id}`);
+  },
+
+  // Remplacements
+  getRemplacements: async (): Promise<Remplacement[]> => {
+    const res = await api.get<Remplacement[]>(`${BASE}/remplacements`);
+    return res.data;
+  },
+
+  createRemplacement: async (data: RemplacementRequest): Promise<Remplacement> => {
+    const res = await api.post<Remplacement>(`${BASE}/remplacements`, data);
+    return res.data;
+  },
+
+  deleteRemplacement: async (id: number): Promise<void> => {
+    await api.delete(`${BASE}/remplacements/${id}`);
   },
 };

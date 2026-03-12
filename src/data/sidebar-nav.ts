@@ -28,6 +28,10 @@ import {
   Briefcase,
   CalendarClock,
   ShieldCheck,
+  Palette,
+  Printer,
+  TrendingUp,
+  Activity,
 } from "lucide-react";
 
 export type NavItem = {
@@ -74,6 +78,10 @@ export const sidebarSections: NavSection[] = [
       { title: "Rapports", icon: FileText, iconBg: "bg-indigo-100", iconColor: "text-indigo-600", url: "/dashboard/rapports", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR"] },
       { title: "Circulaires", icon: Newspaper, iconBg: "bg-lime-100", iconColor: "text-lime-600", url: "/dashboard/circulaires" },
       { title: "Carnets", icon: BookOpen, iconBg: "bg-slate-100", iconColor: "text-slate-600", url: "/dashboard/carnets", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR", "ENSEIGNANT", "PARENT"] },
+      { title: "Templates Bulletin", icon: Palette, iconBg: "bg-indigo-100", iconColor: "text-indigo-600", url: "/dashboard/bulletin-templates", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR"] },
+      { title: "Bulletins en masse", icon: Printer, iconBg: "bg-sky-100", iconColor: "text-sky-600", url: "/dashboard/bulletins-masse", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR"] },
+      { title: "Stats Reussite", icon: TrendingUp, iconBg: "bg-emerald-100", iconColor: "text-emerald-600", url: "/dashboard/stats-reussite", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR"] },
+      { title: "Comparatif", icon: Activity, iconBg: "bg-fuchsia-100", iconColor: "text-fuchsia-600", url: "/dashboard/comparatif", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR"] },
       { title: "Factures", icon: Receipt, iconBg: "bg-teal-100", iconColor: "text-teal-600", url: "/dashboard/factures", roles: ["SUPER_ADMIN", "ADMIN", "COMPTABLE"] },
     ],
   },

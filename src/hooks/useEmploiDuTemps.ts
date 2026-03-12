@@ -1,13 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { emploiDuTempsApi } from "@/api/emploi-du-temps.api";
-import type { EmploiDuTempsEntry, Creneau, Conflit } from "@/types/emploi-du-temps";
+import type { EmploiDuTempsEntry, Creneau, Conflit, Remplacement, RemplacementRequest } from "@/types/emploi-du-temps";
 
 const EDT_KEY = "emploi-du-temps";
 const CRENEAUX_KEY = "creneaux";
+const REMPLACEMENTS_KEY = "remplacements";
 
-/**
- * Schedule entries by class.
- */
 export function useEmploiByClasse(classeId: number) {
   return useQuery<EmploiDuTempsEntry[]>({
     queryKey: [EDT_KEY, "classe", classeId],
@@ -16,9 +14,6 @@ export function useEmploiByClasse(classeId: number) {
   });
 }
 
-/**
- * Schedule entries by teacher.
- */
 export function useEmploiByEnseignant(enseignantId: number) {
   return useQuery<EmploiDuTempsEntry[]>({
     queryKey: [EDT_KEY, "enseignant", enseignantId],
@@ -27,9 +22,6 @@ export function useEmploiByEnseignant(enseignantId: number) {
   });
 }
 
-/**
- * All time slots.
- */
 export function useCreneaux() {
   return useQuery<Creneau[]>({
     queryKey: [CRENEAUX_KEY],
@@ -37,9 +29,6 @@ export function useCreneaux() {
   });
 }
 
-/**
- * Save all schedule entries for a class.
- */
 export function useSaveEmploi() {
   const qc = useQueryClient();
   return useMutation({
@@ -51,9 +40,6 @@ export function useSaveEmploi() {
   });
 }
 
-/**
- * Check for scheduling conflicts.
- */
 export function useCheckConflits() {
   return useMutation<Conflit[], Error, { classeId: number; entries: EmploiDuTempsEntry[] }>({
     mutationFn: ({ classeId, entries }) =>
@@ -61,15 +47,50 @@ export function useCheckConflits() {
   });
 }
 
-/**
- * Create a new time slot.
- */
 export function useCreateCreneau() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (data: Omit<Creneau, "id">) => emploiDuTempsApi.createCreneau(data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: [CRENEAUX_KEY] });
+    },
+  });
+}
+
+export function useDeleteCreneau() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => emploiDuTempsApi.deleteCreneau(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: [CRENEAUX_KEY] });
+    },
+  });
+}
+
+// Remplacements
+export function useRemplacements() {
+  return useQuery<Remplacement[]>({
+    queryKey: [REMPLACEMENTS_KEY],
+    queryFn: () => emploiDuTempsApi.getRemplacements(),
+  });
+}
+
+export function useCreateRemplacement() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: RemplacementRequest) => emploiDuTempsApi.createRemplacement(data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: [REMPLACEMENTS_KEY] });
+    },
+  });
+}
+
+export function useDeleteRemplacement() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => emploiDuTempsApi.deleteRemplacement(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: [REMPLACEMENTS_KEY] });
     },
   });
 }

@@ -19,7 +19,28 @@ export interface EmploiDuTempsEntry {
 }
 
 export interface Conflit {
+  typeConflit?: string;
   message: string;
   jourSemaine: number;
   creneauId: number;
+  enseignantId?: number;
+  salle?: string;
+}
+
+export interface RemplacementRequest {
+  emploiDuTempsId: number;
+  enseignantRemplacantId: number;
+  dateDebut: string;
+  dateFin: string;
+  motif?: string;
+}
+
+export interface Remplacement {
+  id: number;
+  emploiDuTempsId: number;
+  enseignantRemplacantId: number;
+  dateDebut: string;
+  dateFin: string;
+  motif?: string;
+  createdAt?: string;
 }
