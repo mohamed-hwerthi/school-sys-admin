@@ -1,0 +1,59 @@
+version: '3.8'
+
+# ═══════════════════════════════════════
+# Production Docker Compose
+# Usage: docker compose -f docker-compose.prod.yml up -d
+# Requires: .env file (copy from .env.example)
+# ═══════════════════════════════════════
+
+services:
+  # ─── PostgreSQL Database ───
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-schooldb}
+      POSTGRES_USER: ${DB_USER:-school}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-school}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─── Spring Boot Backend ───
+  backend:
+    build: ./school-system-back
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${DB_NAME:-schooldb}
+      SPRING_DATASOURCE_USERNAME: ${DB_USER:-school}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+      APP_STORAGE_LOCAL_PATH: /app/uploads
+    volumes:
+      - uploads_data:/app/uploads
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/api/system/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # ─── React Frontend (Nginx) ───
+  frontend:
+    build: ./school-system-front
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "${APP_PORT:-80}:80"
+
+volumes:
+  postgres_data:
+  uploads_data:

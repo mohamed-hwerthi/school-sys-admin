@@ -1,0 +1,52 @@
+# ═══════════════════════════════════════
+# Frontend CI — React 18, TypeScript, Vite
+# Triggers on PRs and pushes touching frontend code
+# ═══════════════════════════════════════
+
+name: Frontend CI
+
+on:
+  pull_request:
+    paths: ['school-system-front/**']
+  push:
+    branches: [main, develop]
+    paths: ['school-system-front/**']
+
+jobs:
+  build-lint-test:
+    name: Lint, Type Check & Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: school-system-front/package-lock.json
+
+      - name: Install dependencies
+        working-directory: school-system-front
+        run: npm ci
+
+      - name: Lint
+        working-directory: school-system-front
+        run: npm run lint
+
+      - name: Type Check
+        working-directory: school-system-front
+        run: npx tsc --noEmit
+
+      - name: Build
+        working-directory: school-system-front
+        run: npm run build
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-build
+          path: school-system-front/dist/
+          retention-days: 7
