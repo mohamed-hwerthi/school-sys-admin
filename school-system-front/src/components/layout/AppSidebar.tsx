@@ -21,10 +21,12 @@ import {
   CollapsibleContent,
 } from "@/components/ui/collapsible";
 import { sidebarSections } from "@/data/sidebar-nav";
+import { useAuth } from "@/hooks/useAuth";
 
 export function AppSidebar() {
   const location = useLocation();
   const { toggleSidebar } = useSidebar();
+  const { user } = useAuth();
 
   const [openSections, setOpenSections] = useState<Record<string, boolean>>(
     () =>
@@ -138,11 +140,15 @@ export function AppSidebar() {
       <SidebarFooter className="px-4 py-3 group-data-[collapsible=icon]:px-2">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-purple-600 text-white text-xs font-bold shadow-sm">
-            EA
+            {user ? `${user.firstName.charAt(0)}${user.lastName.charAt(0)}` : "?"}
           </div>
           <div className="flex flex-col leading-tight group-data-[collapsible=icon]:hidden">
-            <span className="text-[13px] font-semibold text-foreground">EcoleNet Admin</span>
-            <span className="text-[11px] text-muted-foreground">v1.0.0</span>
+            <span className="text-[13px] font-semibold text-foreground">
+              {user ? `${user.firstName} ${user.lastName}` : "EcoleNet"}
+            </span>
+            <span className="text-[11px] text-muted-foreground">
+              {user?.role?.replace("_", " ") ?? "v1.0.0"}
+            </span>
           </div>
         </div>
       </SidebarFooter>
