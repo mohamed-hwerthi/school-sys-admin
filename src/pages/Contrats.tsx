@@ -1,0 +1,645 @@
+import { useState, useMemo } from "react";
+import { motion } from "framer-motion";
+import {
+  FileText,
+  Search,
+  Filter,
+  Plus,
+  Edit,
+  Trash2,
+  MoreHorizontal,
+  X,
+  Loader2,
+  CheckCircle,
+  XCircle,
+  Clock,
+  ChevronLeft,
+  ChevronRight,
+  CalendarDays,
+  Briefcase,
+} from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogClose,
+} from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
+import {
+  useContrats,
+  useCreateContrat,
+  useUpdateContrat,
+  useDeleteContrat,
+  useConges,
+  useCreateConge,
+  useApprouverConge,
+  useRefuserConge,
+  useDeleteConge,
+} from "@/hooks/useContrats";
+import { useTeachers } from "@/hooks/useTeachers";
+import type { ContratEnseignant, Conge, TypeContrat, TypeConge, StatutConge } from "@/types/contrat";
+
+const TYPE_CONTRAT_LABELS: Record<TypeContrat, string> = {
+  CDI: "CDI",
+  CDD: "CDD",
+  VACATAIRE: "Vacataire",
+};
+
+const TYPE_CONGE_LABELS: Record<TypeConge, string> = {
+  ANNUEL: "Annuel",
+  MALADIE: "Maladie",
+  MATERNITE: "Maternite",
+  EXCEPTIONNEL: "Exceptionnel",
+  SANS_SOLDE: "Sans solde",
+};
+
+const STATUT_CONGE_LABELS: Record<StatutConge, string> = {
+  EN_ATTENTE: "En attente",
+  APPROUVE: "Approuve",
+  REFUSE: "Refuse",
+};
+
+const STATUT_CONGE_COLORS: Record<StatutConge, string> = {
+  EN_ATTENTE: "bg-amber-100 text-amber-700",
+  APPROUVE: "bg-emerald-100 text-emerald-700",
+  REFUSE: "bg-red-100 text-red-700",
+};
+
+const ITEMS_PER_PAGE = 15;
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 20 },
+  visible: (i: number) => ({
+    opacity: 1,
+    y: 0,
+    transition: { delay: i * 0.06, duration: 0.35 },
+  }),
+};
+
+export default function ContratsPage() {
+  const [activeTab, setActiveTab] = useState("contrats");
+  const [search, setSearch] = useState("");
+  const [filterType, setFilterType] = useState("all");
+  const [currentPage, setCurrentPage] = useState(0);
+
+  // Contrat form
+  const [contratFormOpen, setContratFormOpen] = useState(false);
+  const [editContrat, setEditContrat] = useState<ContratEnseignant | null>(null);
+  const [contratForm, setContratForm] = useState({
+    enseignantId: 0,
+    typeContrat: "CDD" as TypeContrat,
+    dateDebut: new Date().toISOString().split("T")[0],
+    dateFin: "",
+    salaireBase: 0,
+  });
+
+  // Conge form
+  const [congeFormOpen, setCongeFormOpen] = useState(false);
+  const [congeForm, setCongeForm] = useState({
+    enseignantId: 0,
+    typeConge: "ANNUEL" as TypeConge,
+    dateDebut: "",
+    dateFin: "",
+    motif: "",
+  });
+
+  const [deleteContratTarget, setDeleteContratTarget] = useState<ContratEnseignant | null>(null);
+  const [deleteCongeTarget, setDeleteCongeTarget] = useState<Conge | null>(null);
+
+  const { teachers } = useTeachers();
+  const { data: contrats = [], isLoading: contratsLoading } = useContrats();
+  const createContratMutation = useCreateContrat();
+  const updateContratMutation = useUpdateContrat();
+  const deleteContratMutation = useDeleteContrat();
+
+  const { data: conges = [], isLoading: congesLoading } = useConges();
+  const createCongeMutation = useCreateConge();
+  const approuverCongeMutation = useApprouverConge();
+  const refuserCongeMutation = useRefuserConge();
+  const deleteCongeMutation = useDeleteConge();
+
+  const getTeacherName = (id: number) => {
+    const t = teachers.find((t) => t.id === id);
+    return t ? `${t.prenom} ${t.nom}` : `Enseignant #${id}`;
+  };
+
+  // Filtered contrats
+  const filteredContrats = useMemo(() => {
+    let list = contrats;
+    if (search) {
+      const q = search.toLowerCase();
+      list = list.filter((c) => getTeacherName(c.enseignantId).toLowerCase().includes(q));
+    }
+    if (filterType !== "all") {
+      list = list.filter((c) => c.typeContrat === filterType);
+    }
+    return list;
+  }, [contrats, search, filterType, teachers]);
+
+  // Filtered conges
+  const filteredConges = useMemo(() => {
+    let list = conges;
+    if (search) {
+      const q = search.toLowerCase();
+      list = list.filter(
+        (c) =>
+          c.enseignantNom?.toLowerCase().includes(q) ||
+          getTeacherName(c.enseignantId).toLowerCase().includes(q)
+      );
+    }
+    return list;
+  }, [conges, search, teachers]);
+
+  const activeList = activeTab === "contrats" ? filteredContrats : filteredConges;
+  const totalPages = Math.max(1, Math.ceil(activeList.length / ITEMS_PER_PAGE));
+  const paginatedContrats = filteredContrats.slice(currentPage * ITEMS_PER_PAGE, (currentPage + 1) * ITEMS_PER_PAGE);
+  const paginatedConges = filteredConges.slice(currentPage * ITEMS_PER_PAGE, (currentPage + 1) * ITEMS_PER_PAGE);
+
+  const hasFilters = search || filterType !== "all";
+  const resetFilters = () => {
+    setSearch("");
+    setFilterType("all");
+    setCurrentPage(0);
+  };
+
+  const stats = [
+    { label: "Total Contrats", value: contrats.length, icon: FileText, color: "bg-blue-50", textColor: "text-blue-700" },
+    { label: "CDI", value: contrats.filter((c) => c.typeContrat === "CDI").length, icon: Briefcase, color: "bg-emerald-50", textColor: "text-emerald-700" },
+    { label: "Conges en attente", value: conges.filter((c) => c.statut === "EN_ATTENTE").length, icon: Clock, color: "bg-amber-50", textColor: "text-amber-700" },
+  ];
+
+  const openCreateContrat = () => {
+    setEditContrat(null);
+    setContratForm({ enseignantId: 0, typeContrat: "CDD", dateDebut: new Date().toISOString().split("T")[0], dateFin: "", salaireBase: 0 });
+    setContratFormOpen(true);
+  };
+
+  const openEditContrat = (c: ContratEnseignant) => {
+    setEditContrat(c);
+    setContratForm({
+      enseignantId: c.enseignantId,
+      typeContrat: c.typeContrat,
+      dateDebut: c.dateDebut,
+      dateFin: c.dateFin ?? "",
+      salaireBase: c.salaireBase ?? 0,
+    });
+    setContratFormOpen(true);
+  };
+
+  const handleSaveContrat = () => {
+    const payload = {
+      ...contratForm,
+      dateFin: contratForm.dateFin || undefined,
+      salaireBase: contratForm.salaireBase || undefined,
+    };
+    if (editContrat) {
+      updateContratMutation.mutate(
+        { id: editContrat.id, data: payload },
+        { onSuccess: () => setContratFormOpen(false) }
+      );
+    } else {
+      createContratMutation.mutate(payload as Omit<ContratEnseignant, "id">, {
+        onSuccess: () => setContratFormOpen(false),
+      });
+    }
+  };
+
+  const handleCreateConge = () => {
+    const payload = {
+      enseignantId: congeForm.enseignantId,
+      typeConge: congeForm.typeConge,
+      dateDebut: congeForm.dateDebut,
+      dateFin: congeForm.dateFin,
+      motif: congeForm.motif || undefined,
+    };
+    createCongeMutation.mutate(payload, {
+      onSuccess: () => setCongeFormOpen(false),
+    });
+  };
+
+  const handleDeleteContrat = () => {
+    if (!deleteContratTarget) return;
+    deleteContratMutation.mutate(deleteContratTarget.id, {
+      onSuccess: () => setDeleteContratTarget(null),
+    });
+  };
+
+  const handleDeleteConge = () => {
+    if (!deleteCongeTarget) return;
+    deleteCongeMutation.mutate(deleteCongeTarget.id, {
+      onSuccess: () => setDeleteCongeTarget(null),
+    });
+  };
+
+  const isLoading = contratsLoading || congesLoading;
+  if (isLoading) {
+    return (
+      <div className="flex h-[50vh] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-4 md:p-6 lg:p-8 space-y-6">
+      {/* Header */}
+      <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="font-heading text-xl md:text-2xl font-bold text-foreground">Contrats & Conges</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">Gerez les contrats des enseignants et les demandes de conge</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" className="gap-1.5" onClick={() => {
+            setCongeForm({ enseignantId: 0, typeConge: "ANNUEL", dateDebut: "", dateFin: "", motif: "" });
+            setCongeFormOpen(true);
+          }}>
+            <CalendarDays className="h-4 w-4" />
+            Demande de conge
+          </Button>
+          <Button size="sm" className="gap-1.5 bg-gradient-primary shadow-btn" onClick={openCreateContrat}>
+            <Plus className="h-4 w-4" />
+            Nouveau contrat
+          </Button>
+        </div>
+      </motion.div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-3 gap-3">
+        {stats.map((stat, i) => (
+          <motion.div key={stat.label} custom={i} variants={fadeUp} initial="hidden" animate="visible" className="rounded-xl border border-border/50 bg-card p-4 shadow-sm">
+            <div className={`flex h-9 w-9 items-center justify-center rounded-lg ${stat.color}`}>
+              <stat.icon className={`h-4.5 w-4.5 ${stat.textColor}`} />
+            </div>
+            <p className="mt-2.5 font-heading text-2xl font-bold text-foreground">{stat.value}</p>
+            <p className="text-xs text-muted-foreground">{stat.label}</p>
+          </motion.div>
+        ))}
+      </div>
+
+      {/* Tabs + Filters */}
+      <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); setCurrentPage(0); }}>
+        <motion.div custom={3} variants={fadeUp} initial="hidden" animate="visible" className="rounded-xl border border-border/50 bg-card p-4 shadow-sm space-y-3">
+          <TabsList>
+            <TabsTrigger value="contrats">Contrats</TabsTrigger>
+            <TabsTrigger value="conges">Conges</TabsTrigger>
+          </TabsList>
+          <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+            <div className="relative flex-1 min-w-0">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input value={search} onChange={(e) => { setSearch(e.target.value); setCurrentPage(0); }} placeholder="Rechercher par enseignant..." className="pl-9" />
+            </div>
+            {activeTab === "contrats" && (
+              <Select value={filterType} onValueChange={(v) => { setFilterType(v); setCurrentPage(0); }}>
+                <SelectTrigger className="w-[150px]">
+                  <Filter className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
+                  <SelectValue placeholder="Type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tous</SelectItem>
+                  {(Object.keys(TYPE_CONTRAT_LABELS) as TypeContrat[]).map((t) => (
+                    <SelectItem key={t} value={t}>{TYPE_CONTRAT_LABELS[t]}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+            {hasFilters && (
+              <Button variant="ghost" size="sm" onClick={resetFilters} className="gap-1 text-muted-foreground hover:text-foreground">
+                <X className="h-3.5 w-3.5" /> Reinitialiser
+              </Button>
+            )}
+          </div>
+        </motion.div>
+
+        {/* Contrats Table */}
+        <TabsContent value="contrats">
+          <motion.div custom={4} variants={fadeUp} initial="hidden" animate="visible" className="rounded-xl border border-border/50 bg-card shadow-sm overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border bg-muted/30">
+                    <th className="py-3 px-4 text-left text-xs font-semibold text-muted-foreground">Enseignant</th>
+                    <th className="py-3 px-4 text-left text-xs font-semibold text-muted-foreground">Type</th>
+                    <th className="py-3 px-4 text-left text-xs font-semibold text-muted-foreground hidden sm:table-cell">Date debut</th>
+                    <th className="py-3 px-4 text-left text-xs font-semibold text-muted-foreground hidden md:table-cell">Date fin</th>
+                    <th className="py-3 px-4 text-left text-xs font-semibold text-muted-foreground hidden lg:table-cell">Salaire base</th>
+                    <th className="py-3 px-4 text-right text-xs font-semibold text-muted-foreground">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paginatedContrats.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="py-16 text-center text-muted-foreground">
+                        <FileText className="h-10 w-10 mx-auto mb-3 opacity-30" />
+                        <p className="font-medium">Aucun contrat trouve</p>
+                      </td>
+                    </tr>
+                  ) : (
+                    paginatedContrats.map((contrat) => (
+                      <tr key={contrat.id} className="border-b border-border/50 last:border-0 hover:bg-muted/20 transition-colors">
+                        <td className="py-3 px-4 font-medium text-foreground">{getTeacherName(contrat.enseignantId)}</td>
+                        <td className="py-3 px-4">
+                          <Badge variant="outline">{TYPE_CONTRAT_LABELS[contrat.typeContrat]}</Badge>
+                        </td>
+                        <td className="py-3 px-4 hidden sm:table-cell text-muted-foreground">{new Date(contrat.dateDebut).toLocaleDateString("fr-FR")}</td>
+                        <td className="py-3 px-4 hidden md:table-cell text-muted-foreground">{contrat.dateFin ? new Date(contrat.dateFin).toLocaleDateString("fr-FR") : "-"}</td>
+                        <td className="py-3 px-4 hidden lg:table-cell text-muted-foreground">{contrat.salaireBase ? `${contrat.salaireBase.toLocaleString()} MAD` : "-"}</td>
+                        <td className="py-3 px-4 text-right">
+                          <div className="hidden sm:flex items-center justify-end gap-1">
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-amber-600" onClick={() => openEditContrat(contrat)}>
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-red-600" onClick={() => setDeleteContratTarget(contrat)}>
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8 sm:hidden"><MoreHorizontal className="h-4 w-4" /></Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => openEditContrat(contrat)}><Edit className="h-4 w-4 mr-2" /> Modifier</DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => setDeleteContratTarget(contrat)} className="text-red-600"><Trash2 className="h-4 w-4 mr-2" /> Supprimer</DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+            {totalPages > 1 && activeTab === "contrats" && (
+              <div className="flex items-center justify-between border-t border-border px-4 py-3">
+                <p className="text-xs text-muted-foreground">Page {currentPage + 1} sur {totalPages}</p>
+                <div className="flex items-center gap-1">
+                  <Button variant="outline" size="icon" className="h-8 w-8" disabled={currentPage === 0} onClick={() => setCurrentPage((p) => p - 1)}><ChevronLeft className="h-4 w-4" /></Button>
+                  <Button variant="outline" size="icon" className="h-8 w-8" disabled={currentPage >= totalPages - 1} onClick={() => setCurrentPage((p) => p + 1)}><ChevronRight className="h-4 w-4" /></Button>
+                </div>
+              </div>
+            )}
+          </motion.div>
+        </TabsContent>
+
+        {/* Conges Table */}
+        <TabsContent value="conges">
+          <motion.div custom={4} variants={fadeUp} initial="hidden" animate="visible" className="rounded-xl border border-border/50 bg-card shadow-sm overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border bg-muted/30">
+                    <th className="py-3 px-4 text-left text-xs font-semibold text-muted-foreground">Enseignant</th>
+                    <th className="py-3 px-4 text-left text-xs font-semibold text-muted-foreground">Type</th>
+                    <th className="py-3 px-4 text-left text-xs font-semibold text-muted-foreground hidden sm:table-cell">Debut</th>
+                    <th className="py-3 px-4 text-left text-xs font-semibold text-muted-foreground hidden sm:table-cell">Fin</th>
+                    <th className="py-3 px-4 text-left text-xs font-semibold text-muted-foreground hidden md:table-cell">Motif</th>
+                    <th className="py-3 px-4 text-left text-xs font-semibold text-muted-foreground">Statut</th>
+                    <th className="py-3 px-4 text-right text-xs font-semibold text-muted-foreground">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paginatedConges.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="py-16 text-center text-muted-foreground">
+                        <CalendarDays className="h-10 w-10 mx-auto mb-3 opacity-30" />
+                        <p className="font-medium">Aucune demande de conge</p>
+                      </td>
+                    </tr>
+                  ) : (
+                    paginatedConges.map((conge) => (
+                      <tr key={conge.id} className="border-b border-border/50 last:border-0 hover:bg-muted/20 transition-colors">
+                        <td className="py-3 px-4 font-medium text-foreground">{conge.enseignantNom ?? getTeacherName(conge.enseignantId)}</td>
+                        <td className="py-3 px-4">
+                          <Badge variant="outline">{TYPE_CONGE_LABELS[conge.typeConge]}</Badge>
+                        </td>
+                        <td className="py-3 px-4 hidden sm:table-cell text-muted-foreground">{new Date(conge.dateDebut).toLocaleDateString("fr-FR")}</td>
+                        <td className="py-3 px-4 hidden sm:table-cell text-muted-foreground">{new Date(conge.dateFin).toLocaleDateString("fr-FR")}</td>
+                        <td className="py-3 px-4 hidden md:table-cell text-muted-foreground max-w-[200px] truncate">{conge.motif ?? "-"}</td>
+                        <td className="py-3 px-4">
+                          <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUT_CONGE_COLORS[conge.statut]}`}>
+                            {STATUT_CONGE_LABELS[conge.statut]}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-right">
+                          <div className="hidden sm:flex items-center justify-end gap-1">
+                            {conge.statut === "EN_ATTENTE" && (
+                              <>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-emerald-600" onClick={() => approuverCongeMutation.mutate(conge.id)}>
+                                  <CheckCircle className="h-4 w-4" />
+                                </Button>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-red-600" onClick={() => refuserCongeMutation.mutate(conge.id)}>
+                                  <XCircle className="h-4 w-4" />
+                                </Button>
+                              </>
+                            )}
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-red-600" onClick={() => setDeleteCongeTarget(conge)}>
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8 sm:hidden"><MoreHorizontal className="h-4 w-4" /></Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              {conge.statut === "EN_ATTENTE" && (
+                                <>
+                                  <DropdownMenuItem onClick={() => approuverCongeMutation.mutate(conge.id)}>
+                                    <CheckCircle className="h-4 w-4 mr-2" /> Approuver
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => refuserCongeMutation.mutate(conge.id)}>
+                                    <XCircle className="h-4 w-4 mr-2" /> Refuser
+                                  </DropdownMenuItem>
+                                </>
+                              )}
+                              <DropdownMenuItem onClick={() => setDeleteCongeTarget(conge)} className="text-red-600">
+                                <Trash2 className="h-4 w-4 mr-2" /> Supprimer
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+            {totalPages > 1 && activeTab === "conges" && (
+              <div className="flex items-center justify-between border-t border-border px-4 py-3">
+                <p className="text-xs text-muted-foreground">Page {currentPage + 1} sur {totalPages}</p>
+                <div className="flex items-center gap-1">
+                  <Button variant="outline" size="icon" className="h-8 w-8" disabled={currentPage === 0} onClick={() => setCurrentPage((p) => p - 1)}><ChevronLeft className="h-4 w-4" /></Button>
+                  <Button variant="outline" size="icon" className="h-8 w-8" disabled={currentPage >= totalPages - 1} onClick={() => setCurrentPage((p) => p + 1)}><ChevronRight className="h-4 w-4" /></Button>
+                </div>
+              </div>
+            )}
+          </motion.div>
+        </TabsContent>
+      </Tabs>
+
+      {/* Create / Edit Contrat Dialog */}
+      <Dialog open={contratFormOpen} onOpenChange={setContratFormOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{editContrat ? "Modifier le contrat" : "Nouveau contrat"}</DialogTitle>
+            <DialogDescription>{editContrat ? "Modifiez les informations du contrat." : "Creez un nouveau contrat pour un enseignant."}</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-1.5">
+              <Label>Enseignant</Label>
+              <Select value={contratForm.enseignantId ? String(contratForm.enseignantId) : ""} onValueChange={(v) => setContratForm({ ...contratForm, enseignantId: Number(v) })}>
+                <SelectTrigger><SelectValue placeholder="Selectionner un enseignant" /></SelectTrigger>
+                <SelectContent>
+                  {teachers.map((t) => (
+                    <SelectItem key={t.id} value={String(t.id)}>{t.prenom} {t.nom}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Type de contrat</Label>
+              <Select value={contratForm.typeContrat} onValueChange={(v) => setContratForm({ ...contratForm, typeContrat: v as TypeContrat })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {(Object.keys(TYPE_CONTRAT_LABELS) as TypeContrat[]).map((t) => (
+                    <SelectItem key={t} value={t}>{TYPE_CONTRAT_LABELS[t]}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="contratDebut">Date debut</Label>
+                <Input id="contratDebut" type="date" value={contratForm.dateDebut} onChange={(e) => setContratForm({ ...contratForm, dateDebut: e.target.value })} />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="contratFin">Date fin</Label>
+                <Input id="contratFin" type="date" value={contratForm.dateFin} onChange={(e) => setContratForm({ ...contratForm, dateFin: e.target.value })} />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="salaireBase">Salaire base (MAD)</Label>
+              <Input id="salaireBase" type="number" value={contratForm.salaireBase || ""} onChange={(e) => setContratForm({ ...contratForm, salaireBase: Number(e.target.value) })} placeholder="0" />
+            </div>
+          </div>
+          <DialogFooter>
+            <DialogClose asChild><Button variant="outline">Annuler</Button></DialogClose>
+            <Button onClick={handleSaveContrat} disabled={createContratMutation.isPending || updateContratMutation.isPending || !contratForm.enseignantId}>
+              {(createContratMutation.isPending || updateContratMutation.isPending) ? "Enregistrement..." : "Enregistrer"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create Conge Dialog */}
+      <Dialog open={congeFormOpen} onOpenChange={setCongeFormOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Demande de conge</DialogTitle>
+            <DialogDescription>Enregistrez une demande de conge pour un enseignant.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-1.5">
+              <Label>Enseignant</Label>
+              <Select value={congeForm.enseignantId ? String(congeForm.enseignantId) : ""} onValueChange={(v) => setCongeForm({ ...congeForm, enseignantId: Number(v) })}>
+                <SelectTrigger><SelectValue placeholder="Selectionner un enseignant" /></SelectTrigger>
+                <SelectContent>
+                  {teachers.map((t) => (
+                    <SelectItem key={t.id} value={String(t.id)}>{t.prenom} {t.nom}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Type de conge</Label>
+              <Select value={congeForm.typeConge} onValueChange={(v) => setCongeForm({ ...congeForm, typeConge: v as TypeConge })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {(Object.keys(TYPE_CONGE_LABELS) as TypeConge[]).map((t) => (
+                    <SelectItem key={t} value={t}>{TYPE_CONGE_LABELS[t]}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="congeDebut">Date debut</Label>
+                <Input id="congeDebut" type="date" value={congeForm.dateDebut} onChange={(e) => setCongeForm({ ...congeForm, dateDebut: e.target.value })} />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="congeFin">Date fin</Label>
+                <Input id="congeFin" type="date" value={congeForm.dateFin} onChange={(e) => setCongeForm({ ...congeForm, dateFin: e.target.value })} />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="congeMotif">Motif</Label>
+              <Textarea id="congeMotif" value={congeForm.motif} onChange={(e) => setCongeForm({ ...congeForm, motif: e.target.value })} placeholder="Motif du conge..." rows={2} />
+            </div>
+          </div>
+          <DialogFooter>
+            <DialogClose asChild><Button variant="outline">Annuler</Button></DialogClose>
+            <Button onClick={handleCreateConge} disabled={createCongeMutation.isPending || !congeForm.enseignantId || !congeForm.dateDebut || !congeForm.dateFin}>
+              {createCongeMutation.isPending ? "Creation..." : "Soumettre"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Contrat Confirmation */}
+      <Dialog open={!!deleteContratTarget} onOpenChange={(open) => !open && setDeleteContratTarget(null)}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Supprimer le contrat</DialogTitle>
+            <DialogDescription>Etes-vous sur de vouloir supprimer ce contrat ? Cette action est irreversible.</DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="mt-2">
+            <DialogClose asChild><Button variant="outline">Annuler</Button></DialogClose>
+            <Button variant="destructive" onClick={handleDeleteContrat} disabled={deleteContratMutation.isPending}>
+              {deleteContratMutation.isPending ? "Suppression..." : "Supprimer"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Conge Confirmation */}
+      <Dialog open={!!deleteCongeTarget} onOpenChange={(open) => !open && setDeleteCongeTarget(null)}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Supprimer la demande de conge</DialogTitle>
+            <DialogDescription>Etes-vous sur de vouloir supprimer cette demande de conge ?</DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="mt-2">
+            <DialogClose asChild><Button variant="outline">Annuler</Button></DialogClose>
+            <Button variant="destructive" onClick={handleDeleteConge} disabled={deleteCongeMutation.isPending}>
+              {deleteCongeMutation.isPending ? "Suppression..." : "Supprimer"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
