@@ -32,6 +32,8 @@ import {
   Printer,
   TrendingUp,
   Activity,
+  Megaphone,
+  BellRing,
 } from "lucide-react";
 
 export type NavItem = {
@@ -59,6 +61,7 @@ export const sidebarSections: NavSection[] = [
       { title: "Élèves", icon: Users, iconBg: "bg-emerald-100", iconColor: "text-emerald-600", url: "/dashboard/eleves", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR", "ENSEIGNANT", "COMPTABLE"] },
       { title: "Enseignants", icon: UserCog, iconBg: "bg-orange-100", iconColor: "text-orange-600", url: "/dashboard/enseignants", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR"] },
       { title: "Absences", icon: UserCheck, iconBg: "bg-red-100", iconColor: "text-red-500", url: "/dashboard/absences", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR", "ENSEIGNANT"] },
+      { title: "Portail Parent", icon: GraduationCap, iconBg: "bg-sky-100", iconColor: "text-sky-600", url: "/dashboard/portail-parent", roles: ["PARENT"] },
     ],
   },
   {
@@ -83,6 +86,8 @@ export const sidebarSections: NavSection[] = [
       { title: "Stats Reussite", icon: TrendingUp, iconBg: "bg-emerald-100", iconColor: "text-emerald-600", url: "/dashboard/stats-reussite", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR"] },
       { title: "Comparatif", icon: Activity, iconBg: "bg-fuchsia-100", iconColor: "text-fuchsia-600", url: "/dashboard/comparatif", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR"] },
       { title: "Factures", icon: Receipt, iconBg: "bg-teal-100", iconColor: "text-teal-600", url: "/dashboard/factures", roles: ["SUPER_ADMIN", "ADMIN", "COMPTABLE"] },
+      { title: "Notifications", icon: BellRing, iconBg: "bg-rose-100", iconColor: "text-rose-600", url: "/dashboard/notifications" },
+      { title: "Annonces", icon: Megaphone, iconBg: "bg-amber-100", iconColor: "text-amber-600", url: "/dashboard/annonces" },
     ],
   },
   {

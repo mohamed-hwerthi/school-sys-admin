@@ -66,6 +66,11 @@ const BulletinsMassePage = lazy(() => import("./pages/BulletinsMasse"));
 const StatsReussitePage = lazy(() => import("./pages/StatsReussite"));
 const ComparatifPerformancesPage = lazy(() => import("./pages/ComparatifPerformances"));
 
+// Communication & Parent Portal (Board 5 & 6)
+const NotificationsPage = lazy(() => import("./pages/Notifications"));
+const AnnoncesPage = lazy(() => import("./pages/Annonces"));
+const ParentPortalPage = lazy(() => import("./pages/ParentPortal"));
+
 const PageLoader = () => (
   <div className="flex h-[50vh] items-center justify-center">
     <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -160,6 +165,13 @@ const App = () => (
                 {/* Documents */}
                 <Route path="rapports" element={<Rapports />} />
                 <Route path="circulaires" element={<Circulaires />} />
+
+                {/* Communication */}
+                <Route path="notifications" element={<NotificationsPage />} />
+                <Route path="annonces" element={<AnnoncesPage />} />
+
+                {/* Portail Parent */}
+                <Route path="portail-parent" element={<ParentPortalPage />} />
 
                 {/* Vitrine */}
                 <Route path="vitrine" element={<VitrineAdminPage />} />

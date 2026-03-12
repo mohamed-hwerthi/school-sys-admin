@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { DashboardSkeleton } from "@/components/skeletons/DashboardSkeleton";
 import { useSimulatedLoading } from "@/hooks/useSimulatedLoading";
+import { useDashboardStats, useMonthlyTrends } from "@/hooks/useReporting";
 import {
   AreaChart,
   Area,
@@ -160,6 +161,42 @@ function ChartTooltip({ active, payload, label }: { active?: boolean; payload?: 
 
 export default function Dashboard() {
   const loading = useSimulatedLoading(800);
+  const { data: dashboardStats } = useDashboardStats("2025-2026");
+  const { data: monthlyTrends } = useMonthlyTrends("2025-2026");
+
+  // Override static stats with real data when available
+  const dynamicStats = dashboardStats
+    ? [
+        {
+          ...stats[0],
+          value: dashboardStats.totalStudents.toLocaleString(),
+        },
+        {
+          ...stats[1],
+          value: String(dashboardStats.totalTeachers),
+        },
+        {
+          ...stats[2],
+          value: `${(100 - dashboardStats.tauxAbsence).toFixed(1)}%`,
+        },
+        {
+          ...stats[3],
+          value: `${Math.round(dashboardStats.totalRevenue / 1000)}K ${CURRENCY}`,
+        },
+      ]
+    : stats;
+
+  const dynamicQuickStats = dashboardStats
+    ? [
+        { ...quickStats[0], value: String(Math.round(dashboardStats.tauxAbsence)) },
+        { ...quickStats[1], value: String(dashboardStats.totalStudents > 0 ? dashboardStats.totalStudents : 0) },
+        { ...quickStats[2] },
+      ]
+    : quickStats;
+
+  const dynamicAttendanceRadial = dashboardStats
+    ? [{ name: "Presents", value: Math.round((100 - dashboardStats.tauxAbsence) * 10) / 10, fill: "#10b981" }]
+    : attendanceRadial;
 
   if (loading) return <DashboardSkeleton />;
 
@@ -188,7 +225,7 @@ export default function Dashboard() {
             </p>
           </div>
           <div className="flex gap-3">
-            {quickStats.map((qs) => (
+            {dynamicQuickStats.map((qs) => (
               <div key={qs.label} className="rounded-xl bg-white/10 glass px-4 py-3 text-center min-w-[90px]">
                 <qs.icon className={`h-4 w-4 mx-auto mb-1 ${qs.color.replace("text-", "text-white/")}`} style={{ color: "rgba(255,255,255,0.85)" }} />
                 <p className="font-heading text-lg font-bold">{qs.value}</p>
@@ -206,7 +243,7 @@ export default function Dashboard() {
         initial="hidden"
         animate="visible"
       >
-        {stats.map((stat) => (
+        {dynamicStats.map((stat) => (
           <motion.div
             key={stat.label}
             variants={fadeUp}
@@ -383,13 +420,15 @@ export default function Dashboard() {
           {/* Attendance gauge */}
           <div className="mt-4 pt-4 border-t border-border/40 flex items-center gap-4">
             <ResponsiveContainer width={80} height={80}>
-              <RadialBarChart cx="50%" cy="50%" innerRadius="65%" outerRadius="100%" data={attendanceRadial} startAngle={90} endAngle={-270}>
+              <RadialBarChart cx="50%" cy="50%" innerRadius="65%" outerRadius="100%" data={dynamicAttendanceRadial} startAngle={90} endAngle={-270}>
                 <RadialBar dataKey="value" cornerRadius={10} background={{ fill: "hsl(220 15% 93%)" }} />
               </RadialBarChart>
             </ResponsiveContainer>
             <div>
-              <p className="font-heading text-xl font-bold text-foreground">94.2%</p>
-              <p className="text-xs text-muted-foreground">Taux de présence global</p>
+              <p className="font-heading text-xl font-bold text-foreground">
+                {dashboardStats ? `${(100 - dashboardStats.tauxAbsence).toFixed(1)}%` : "94.2%"}
+              </p>
+              <p className="text-xs text-muted-foreground">Taux de presence global</p>
             </div>
           </div>
         </motion.div>

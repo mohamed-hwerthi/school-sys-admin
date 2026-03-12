@@ -13,6 +13,8 @@ import {
   CalendarDays,
   Sun,
   Star,
+  ArrowRightLeft,
+  Users,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -27,6 +29,13 @@ import {
   DialogFooter,
   DialogClose,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Tabs,
   TabsContent,
@@ -49,7 +58,10 @@ import {
   useCreateJourFerie,
   useDeleteJourFerie,
 } from "@/hooks/useAnneeScolaire";
+import { usePassages, useCreatePassage, useBulkCreatePassages } from "@/hooks/usePassages";
+import { useAllStudents } from "@/hooks/useStudents";
 import type { AnneeScolaire, Trimestre, Vacance, JourFerie } from "@/types/annee-scolaire";
+import type { Passage, DECISIONS } from "@/types/passage";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
@@ -92,6 +104,25 @@ export default function AnneeScolairePage() {
   const [deleteVacanceId, setDeleteVacanceId] = useState<number | null>(null);
   const [deleteJourFerieId, setDeleteJourFerieId] = useState<number | null>(null);
 
+  // Passage form
+  const [passageFormOpen, setPassageFormOpen] = useState(false);
+  const [passageForm, setPassageForm] = useState({
+    studentId: 0,
+    ancienNiveau: "",
+    nouveauNiveau: "",
+    ancienneClasse: "",
+    nouvelleClasse: "",
+    decision: "PASSAGE" as "PASSAGE" | "REDOUBLEMENT" | "EXCLUSION" | "TRANSFERT",
+    motif: "",
+  });
+
+  // Bulk passage state
+  const [bulkPassageOpen, setBulkPassageOpen] = useState(false);
+  const [bulkClasse, setBulkClasse] = useState("");
+  const [bulkDecision, setBulkDecision] = useState<"PASSAGE" | "REDOUBLEMENT" | "EXCLUSION" | "TRANSFERT">("PASSAGE");
+  const [bulkNouveauNiveau, setBulkNouveauNiveau] = useState("");
+  const [bulkNouvelleClasse, setBulkNouvelleClasse] = useState("");
+
   const { data: annees = [], isLoading } = useAllAnneesScolaires();
   const createAnneeMutation = useCreateAnneeScolaire();
   const updateAnneeMutation = useUpdateAnneeScolaire();
@@ -109,6 +140,14 @@ export default function AnneeScolairePage() {
   const { data: joursFeries = [] } = useJoursFeries(selectedAnneeId);
   const createJourFerieMutation = useCreateJourFerie();
   const deleteJourFerieMutation = useDeleteJourFerie();
+
+  // Passages
+  const selectedAnneeLabel = annees.find((a) => a.id === selectedAnneeId)?.label || "2025-2026";
+  const { data: passages = [] } = usePassages(selectedAnneeLabel);
+  const createPassageMutation = useCreatePassage();
+  const bulkCreatePassagesMutation = useBulkCreatePassages();
+  const { data: allStudents = [] } = useAllStudents();
+  const studentsInClasse = bulkClasse ? allStudents.filter((s) => s.classe === bulkClasse) : [];
 
   const selectedAnnee = annees.find((a) => a.id === selectedAnneeId);
 
@@ -254,6 +293,10 @@ export default function AnneeScolairePage() {
                 <TabsTrigger value="trimestres">Trimestres</TabsTrigger>
                 <TabsTrigger value="vacances">Vacances</TabsTrigger>
                 <TabsTrigger value="jours-feries">Jours feries</TabsTrigger>
+                <TabsTrigger value="passages" className="gap-1.5">
+                  <ArrowRightLeft className="h-3.5 w-3.5" />
+                  Passages
+                </TabsTrigger>
               </TabsList>
             </div>
 
@@ -366,9 +409,218 @@ export default function AnneeScolairePage() {
                 </div>
               )}
             </TabsContent>
+
+            {/* Passages */}
+            <TabsContent value="passages" className="space-y-3">
+              <div className="flex justify-end gap-2">
+                <Button size="sm" variant="outline" className="gap-1.5" onClick={() => {
+                  setBulkClasse("");
+                  setBulkDecision("PASSAGE");
+                  setBulkNouveauNiveau("");
+                  setBulkNouvelleClasse("");
+                  setBulkPassageOpen(true);
+                }}>
+                  <Users className="h-4 w-4" />
+                  Passage en masse
+                </Button>
+                <Button size="sm" variant="outline" className="gap-1.5" onClick={() => {
+                  setPassageForm({ studentId: 0, ancienNiveau: "", nouveauNiveau: "", ancienneClasse: "", nouvelleClasse: "", decision: "PASSAGE", motif: "" });
+                  setPassageFormOpen(true);
+                }}>
+                  <Plus className="h-4 w-4" />
+                  Ajouter un passage
+                </Button>
+              </div>
+              {passages.length === 0 ? (
+                <div className="py-8 text-center text-muted-foreground">
+                  <ArrowRightLeft className="h-8 w-8 mx-auto mb-2 opacity-30" />
+                  <p className="text-sm">Aucun passage enregistre pour cette annee</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {passages.map((p) => (
+                    <div key={p.id} className="flex items-center justify-between rounded-lg border border-border/50 bg-muted/10 p-3">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium text-foreground">{p.studentName}</p>
+                          <Badge variant="outline" className={
+                            p.decision === "PASSAGE" ? "bg-emerald-100 text-emerald-700" :
+                            p.decision === "REDOUBLEMENT" ? "bg-amber-100 text-amber-700" :
+                            p.decision === "EXCLUSION" ? "bg-red-100 text-red-700" :
+                            "bg-blue-100 text-blue-700"
+                          }>
+                            {p.decision}
+                          </Badge>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {p.ancienneClasse || p.ancienNiveau} &rarr; {p.nouvelleClasse || p.nouveauNiveau}
+                          {p.motif && <span className="ml-2 italic">- {p.motif}</span>}
+                        </p>
+                      </div>
+                      <span className="text-xs text-muted-foreground">
+                        {p.createdAt ? new Date(p.createdAt).toLocaleDateString("fr-FR") : ""}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </TabsContent>
           </motion.div>
         </Tabs>
       )}
+
+      {/* Single Passage Dialog */}
+      <Dialog open={passageFormOpen} onOpenChange={setPassageFormOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Enregistrer un passage</DialogTitle>
+            <DialogDescription>
+              Enregistrez la decision de fin d'annee pour un eleve.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-1.5">
+              <Label>Eleve</Label>
+              <Select value={passageForm.studentId > 0 ? String(passageForm.studentId) : ""} onValueChange={(v) => {
+                const student = allStudents.find((s) => s.id === Number(v));
+                setPassageForm({
+                  ...passageForm,
+                  studentId: Number(v),
+                  ancienNiveau: student?.niveau || "",
+                  ancienneClasse: student?.classe || "",
+                });
+              }}>
+                <SelectTrigger><SelectValue placeholder="Selectionner un eleve..." /></SelectTrigger>
+                <SelectContent>
+                  {allStudents.map((s) => (
+                    <SelectItem key={s.id} value={String(s.id)}>{s.prenom} {s.nom} ({s.classe})</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Decision</Label>
+              <Select value={passageForm.decision} onValueChange={(v) => setPassageForm({ ...passageForm, decision: v as typeof passageForm.decision })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="PASSAGE">Passage</SelectItem>
+                  <SelectItem value="REDOUBLEMENT">Redoublement</SelectItem>
+                  <SelectItem value="EXCLUSION">Exclusion</SelectItem>
+                  <SelectItem value="TRANSFERT">Transfert</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label>Nouveau niveau</Label>
+                <Input value={passageForm.nouveauNiveau} onChange={(e) => setPassageForm({ ...passageForm, nouveauNiveau: e.target.value })} placeholder="Ex: 3eme annee" />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Nouvelle classe</Label>
+                <Input value={passageForm.nouvelleClasse} onChange={(e) => setPassageForm({ ...passageForm, nouvelleClasse: e.target.value })} placeholder="Ex: 3A" />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Motif</Label>
+              <Input value={passageForm.motif} onChange={(e) => setPassageForm({ ...passageForm, motif: e.target.value })} placeholder="Motif (optionnel)" />
+            </div>
+          </div>
+          <DialogFooter>
+            <DialogClose asChild><Button variant="outline">Annuler</Button></DialogClose>
+            <Button onClick={() => {
+              createPassageMutation.mutate({
+                studentId: passageForm.studentId,
+                ancienNiveau: passageForm.ancienNiveau,
+                nouveauNiveau: passageForm.nouveauNiveau,
+                ancienneClasse: passageForm.ancienneClasse,
+                nouvelleClasse: passageForm.nouvelleClasse,
+                decision: passageForm.decision,
+                anneeScolaire: selectedAnneeLabel,
+                motif: passageForm.motif,
+              }, { onSuccess: () => setPassageFormOpen(false) });
+            }} disabled={createPassageMutation.isPending || !passageForm.studentId}>
+              {createPassageMutation.isPending ? "Enregistrement..." : "Enregistrer"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk Passage Dialog */}
+      <Dialog open={bulkPassageOpen} onOpenChange={setBulkPassageOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Passage en masse</DialogTitle>
+            <DialogDescription>
+              Selectionnez une classe pour appliquer une decision a tous les eleves.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-1.5">
+              <Label>Classe</Label>
+              <Select value={bulkClasse} onValueChange={setBulkClasse}>
+                <SelectTrigger><SelectValue placeholder="Selectionner une classe..." /></SelectTrigger>
+                <SelectContent>
+                  {[...new Set(allStudents.map((s) => s.classe).filter(Boolean))].sort().map((c) => (
+                    <SelectItem key={c} value={c}>{c}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {bulkClasse && (
+              <div className="rounded-lg border border-border/50 bg-muted/10 p-3">
+                <p className="text-sm font-medium text-foreground">{studentsInClasse.length} eleve(s) dans la classe {bulkClasse}</p>
+                <div className="mt-2 max-h-32 overflow-y-auto space-y-1">
+                  {studentsInClasse.map((s) => (
+                    <p key={s.id} className="text-xs text-muted-foreground">{s.prenom} {s.nom}</p>
+                  ))}
+                </div>
+              </div>
+            )}
+            <div className="space-y-1.5">
+              <Label>Decision</Label>
+              <Select value={bulkDecision} onValueChange={(v) => setBulkDecision(v as typeof bulkDecision)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="PASSAGE">Passage</SelectItem>
+                  <SelectItem value="REDOUBLEMENT">Redoublement</SelectItem>
+                  <SelectItem value="EXCLUSION">Exclusion</SelectItem>
+                  <SelectItem value="TRANSFERT">Transfert</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label>Nouveau niveau</Label>
+                <Input value={bulkNouveauNiveau} onChange={(e) => setBulkNouveauNiveau(e.target.value)} placeholder="Ex: 4eme annee" />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Nouvelle classe</Label>
+                <Input value={bulkNouvelleClasse} onChange={(e) => setBulkNouvelleClasse(e.target.value)} placeholder="Ex: 4A" />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <DialogClose asChild><Button variant="outline">Annuler</Button></DialogClose>
+            <Button onClick={() => {
+              const passagesList = studentsInClasse.map((s) => ({
+                studentId: s.id,
+                ancienNiveau: s.niveau || "",
+                nouveauNiveau: bulkNouveauNiveau,
+                ancienneClasse: s.classe || "",
+                nouvelleClasse: bulkNouvelleClasse,
+                decision: bulkDecision,
+                anneeScolaire: selectedAnneeLabel,
+                motif: "",
+              }));
+              bulkCreatePassagesMutation.mutate({ passages: passagesList }, {
+                onSuccess: () => setBulkPassageOpen(false),
+              });
+            }} disabled={bulkCreatePassagesMutation.isPending || !bulkClasse || studentsInClasse.length === 0}>
+              {bulkCreatePassagesMutation.isPending ? "Traitement..." : `Appliquer a ${studentsInClasse.length} eleve(s)`}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Create / Edit Annee Dialog */}
       <Dialog open={anneeFormOpen} onOpenChange={setAnneeFormOpen}>
