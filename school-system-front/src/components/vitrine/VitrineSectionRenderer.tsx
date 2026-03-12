@@ -38,6 +38,7 @@ export default function VitrineSectionRenderer({ section, config, announcements 
     case "map":
       return <VitrineMap section={section} config={config} />;
     case "pre-inscription" as string:
+    case "inscription" as string:
       return <VitrinePreInscription config={config} />;
     case "contact" as string:
       return <VitrineContactForm config={config} slug={slug || ""} />;

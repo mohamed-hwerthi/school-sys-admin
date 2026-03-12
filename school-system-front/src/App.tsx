@@ -47,7 +47,7 @@ const Relances = lazy(() => import("./pages/Relances"));
 const RapportsFinanciers = lazy(() => import("./pages/RapportsFinanciers"));
 const GestionCaisse = lazy(() => import("./pages/GestionCaisse"));
 
-// New pages
+// Auth pages
 const UsersPage = lazy(() => import("./pages/Users"));
 const AbsencesPage = lazy(() => import("./pages/Absences"));
 const EmploiDuTempsPage = lazy(() => import("./pages/EmploiDuTemps"));
@@ -60,16 +60,56 @@ const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const VitrineSite = lazy(() => import("./pages/VitrineSite"));
 const VitrineAdminPage = lazy(() => import("./pages/VitrineAdmin"));
 
-// Bulletin pages (BUL-003 to BUL-007)
+// Bulletin pages
 const BulletinTemplatesPage = lazy(() => import("./pages/BulletinTemplates"));
 const BulletinsMassePage = lazy(() => import("./pages/BulletinsMasse"));
 const StatsReussitePage = lazy(() => import("./pages/StatsReussite"));
 const ComparatifPerformancesPage = lazy(() => import("./pages/ComparatifPerformances"));
 
-// Communication & Parent Portal (Board 5 & 6)
+// Communication & Parent Portal
 const NotificationsPage = lazy(() => import("./pages/Notifications"));
 const AnnoncesPage = lazy(() => import("./pages/Annonces"));
 const ParentPortalPage = lazy(() => import("./pages/ParentPortal"));
+
+// Board 13: Inscriptions
+const InscriptionsPage = lazy(() => import("./pages/Inscriptions"));
+const InscriptionPubliquePage = lazy(() => import("./pages/InscriptionPublique"));
+
+// Board 14: Bibliothèque
+const BibliothequePage = lazy(() => import("./pages/Bibliotheque"));
+
+// Board 15: Transport
+const TransportPage = lazy(() => import("./pages/Transport"));
+
+// Board 16: Cantine
+const CantinePage = lazy(() => import("./pages/Cantine"));
+
+// Board 17: Devoirs & Ressources
+const DevoirsPage = lazy(() => import("./pages/Devoirs"));
+
+// Board 18: Examens en ligne
+const QuizManagementPage = lazy(() => import("./pages/QuizManagement"));
+const QuizPassationPage = lazy(() => import("./pages/QuizPassation"));
+
+// Board 19: RH
+const PointagePage = lazy(() => import("./pages/Pointage"));
+const PaiePage = lazy(() => import("./pages/Paie"));
+const FormationsPage = lazy(() => import("./pages/Formations"));
+const TeacherEvaluationsPage = lazy(() => import("./pages/TeacherEvaluations"));
+
+// Board 20: Documents
+const GenerationDocumentsPage = lazy(() => import("./pages/GenerationDocuments"));
+
+// Board 21: Intégrations
+const IntegrationsPage = lazy(() => import("./pages/Integrations"));
+
+// Board 22: Analytics
+const AnalyticsDashboardPage = lazy(() => import("./pages/AnalyticsDashboard"));
+const SuiviElevePage = lazy(() => import("./pages/SuiviEleve"));
+
+// Board 24: SaaS
+const OnboardingPage = lazy(() => import("./pages/Onboarding"));
+const SuperAdminDashboardPage = lazy(() => import("./pages/SuperAdminDashboard"));
 
 const PageLoader = () => (
   <div className="flex h-[50vh] items-center justify-center">
@@ -89,9 +129,13 @@ const App = () => (
             <Route path="/forgot-password" element={<Suspense fallback={<PageLoader />}><ForgotPassword /></Suspense>} />
             <Route path="/reset-password" element={<Suspense fallback={<PageLoader />}><ResetPassword /></Suspense>} />
             <Route path="/forbidden" element={<Forbidden />} />
-            {/* Public vitrine website */}
+            {/* Public pages */}
             <Route path="/vitrine/:slug" element={<Suspense fallback={<PageLoader />}><VitrineSite /></Suspense>} />
             <Route path="/vitrine/:slug/:pageSlug" element={<Suspense fallback={<PageLoader />}><VitrineSite /></Suspense>} />
+            <Route path="/inscription" element={<Suspense fallback={<PageLoader />}><InscriptionPubliquePage /></Suspense>} />
+            <Route path="/onboarding" element={<Suspense fallback={<PageLoader />}><OnboardingPage /></Suspense>} />
+            {/* Quiz passation (student exam taking) */}
+            <Route path="/quiz/:quizId" element={<Suspense fallback={<PageLoader />}><QuizPassationPage /></Suspense>} />
             <Route
               path="/dashboard"
               element={
@@ -126,6 +170,9 @@ const App = () => (
                 {/* Absences */}
                 <Route path="absences" element={<AbsencesPage />} />
 
+                {/* Inscriptions (Board 13) */}
+                <Route path="inscriptions" element={<InscriptionsPage />} />
+
                 {/* Emploi du temps */}
                 <Route path="emploi-du-temps" element={<EmploiDuTempsPage />} />
                 <Route path="emploi-salles" element={<EmploiSalles />} />
@@ -151,8 +198,10 @@ const App = () => (
                 <Route path="evaluations" element={<Evaluations />} />
                 <Route path="carnets" element={<CarnetNotes />} />
                 <Route path="annee-scolaire" element={<AnneeScolairePage />} />
+                <Route path="devoirs" element={<DevoirsPage />} />
+                <Route path="quiz" element={<QuizManagementPage />} />
 
-                {/* Bulletins (BUL-003 to BUL-007) */}
+                {/* Bulletins */}
                 <Route path="bulletin-templates" element={<BulletinTemplatesPage />} />
                 <Route path="bulletins-masse" element={<BulletinsMassePage />} />
                 <Route path="stats-reussite" element={<StatsReussitePage />} />
@@ -160,11 +209,14 @@ const App = () => (
 
                 {/* Vie scolaire */}
                 <Route path="discipline" element={<DisciplinePage />} />
-                <Route path="contrats" element={<ContratsPage />} />
+                <Route path="bibliotheque" element={<BibliothequePage />} />
+                <Route path="transport" element={<TransportPage />} />
+                <Route path="cantine" element={<CantinePage />} />
 
                 {/* Documents */}
                 <Route path="rapports" element={<Rapports />} />
                 <Route path="circulaires" element={<Circulaires />} />
+                <Route path="documents" element={<GenerationDocumentsPage />} />
 
                 {/* Communication */}
                 <Route path="notifications" element={<NotificationsPage />} />
@@ -172,6 +224,23 @@ const App = () => (
 
                 {/* Portail Parent */}
                 <Route path="portail-parent" element={<ParentPortalPage />} />
+
+                {/* RH & Personnel (Board 19) */}
+                <Route path="contrats" element={<ContratsPage />} />
+                <Route path="rh/pointage" element={<PointagePage />} />
+                <Route path="rh/paie" element={<PaiePage />} />
+                <Route path="rh/formations" element={<FormationsPage />} />
+                <Route path="teacher-evaluations" element={<TeacherEvaluationsPage />} />
+
+                {/* Analytics (Board 22) */}
+                <Route path="analytics" element={<AnalyticsDashboardPage />} />
+                <Route path="suivi-eleve" element={<SuiviElevePage />} />
+
+                {/* Intégrations (Board 21) */}
+                <Route path="integrations" element={<IntegrationsPage />} />
+
+                {/* SaaS Admin (Board 24) */}
+                <Route path="super-admin" element={<SuperAdminDashboardPage />} />
 
                 {/* Vitrine */}
                 <Route path="vitrine" element={<VitrineAdminPage />} />
