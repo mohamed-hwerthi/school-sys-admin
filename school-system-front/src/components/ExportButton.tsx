@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Download, FileSpreadsheet, FileText } from "lucide-react";
 import { useExportData } from "@/hooks/useImportExport";
-import { toast } from "sonner";
+import { notify } from "@/lib/toast";
 import type { ExportType, ExportFormat, ExportFilters } from "@/types/import-export";
 
 interface ExportButtonProps {
@@ -33,11 +33,11 @@ export default function ExportButton({
     setIsExporting(true);
     try {
       await exportMutation.mutateAsync({ type, format, filters });
-      toast.success(
+      notify.success(
         `Export ${format.toUpperCase()} telecharge avec succes.`
       );
     } catch {
-      toast.error("Erreur lors de l'export. Veuillez reessayer.");
+      notify.error("Erreur lors de l'export. Veuillez reessayer.");
     } finally {
       setIsExporting(false);
     }

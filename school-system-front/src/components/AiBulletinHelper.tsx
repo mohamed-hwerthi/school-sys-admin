@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Sparkles, Copy, Check, RefreshCw } from "lucide-react";
 import { useGenerateBulletinComment } from "@/hooks/useAi";
-import { toast } from "sonner";
+import { notify } from "@/lib/toast";
 import type { AiTone, AiCommentResponse } from "@/types/ai";
 
 interface AiBulletinHelperProps {
@@ -52,7 +52,7 @@ export default function AiBulletinHelper({
       setResult(response);
       setEditedComment(response.comment);
     } catch {
-      toast.error("Erreur lors de la generation du commentaire.");
+      notify.error("Erreur lors de la generation du commentaire.");
     }
   };
 
@@ -60,16 +60,16 @@ export default function AiBulletinHelper({
     try {
       await navigator.clipboard.writeText(editedComment);
       setCopied(true);
-      toast.success("Commentaire copie dans le presse-papiers.");
+      notify.success("Commentaire copie dans le presse-papiers.");
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      toast.error("Impossible de copier le texte.");
+      notify.error("Impossible de copier le texte.");
     }
   };
 
   const handleAccept = () => {
     onAccept?.(editedComment);
-    toast.success("Commentaire applique.");
+    notify.success("Commentaire applique.");
   };
 
   return (

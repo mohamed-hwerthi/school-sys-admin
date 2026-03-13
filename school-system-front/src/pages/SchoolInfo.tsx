@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
-import { toast } from "sonner";
+import { notify } from "@/lib/toast";
 import { Save, Upload, ImageIcon } from "lucide-react";
 
 function SchoolInfoSkeleton() {
@@ -80,12 +80,12 @@ export default function SchoolInfo() {
     if (!file) return;
 
     if (!file.type.startsWith("image/")) {
-      toast.error("Veuillez sélectionner un fichier image");
+      notify.error("Veuillez sélectionner un fichier image");
       return;
     }
 
     if (file.size > 2 * 1024 * 1024) {
-      toast.error("L'image ne doit pas dépasser 2 Mo");
+      notify.error("L'image ne doit pas dépasser 2 Mo");
       return;
     }
 
@@ -99,7 +99,7 @@ export default function SchoolInfo() {
 
   const onSubmit = (data: SchoolFormValues) => {
     updateSchool(data);
-    toast.success("Informations de l'école enregistrées");
+    notify.success("Informations de l'école enregistrées");
   };
 
   if (loading) return <SchoolInfoSkeleton />;

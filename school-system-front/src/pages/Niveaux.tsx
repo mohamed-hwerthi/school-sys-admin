@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { useNiveaux, useCreateNiveau, useAddClasse, useRemoveClasse } from "@/hooks/useNiveaux";
 import { useAllStudents } from "@/hooks/useStudents";
 import { NiveauxSkeleton } from "@/components/skeletons/NiveauxSkeleton";
-import { toast } from "sonner";
+import { notify } from "@/lib/toast";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
@@ -34,11 +34,11 @@ function NiveauCard({ niveauId, nom, sections, studentCount, index }: {
     const letter = newSection.toUpperCase().trim();
     if (!letter) return;
     if (letter.length !== 1 || !/^[A-Z]$/.test(letter)) {
-      toast.error("Veuillez entrer une seule lettre (A-Z)");
+      notify.warning("Veuillez entrer une seule lettre (A-Z)");
       return;
     }
     if (sections.includes(letter)) {
-      toast.error(`La section "${letter}" existe déjà`);
+      notify.warning(`La section "${letter}" existe deja`);
       return;
     }
     addClasse.mutate(
@@ -46,9 +46,9 @@ function NiveauCard({ niveauId, nom, sections, studentCount, index }: {
       {
         onSuccess: () => {
           setNewSection("");
-          toast.success(`Section "${prefix}${letter}" ajoutée`);
+          notify.success(`Section "${prefix}${letter}" ajoutée`);
         },
-        onError: (err) => toast.error(err.message),
+        onError: (err) => notify.error(err.message),
       }
     );
   };
@@ -57,8 +57,8 @@ function NiveauCard({ niveauId, nom, sections, studentCount, index }: {
     removeClasse.mutate(
       { niveauId, letter },
       {
-        onSuccess: () => toast.success(`Section "${prefix}${letter}" supprimée`),
-        onError: (err) => toast.error(err.message),
+        onSuccess: () => notify.success(`Section "${prefix}${letter}" supprimée`),
+        onError: (err) => notify.error(err.message),
       }
     );
   };
@@ -137,15 +137,15 @@ export default function Niveaux() {
     const nom = newNiveauNom.trim();
     if (!nom) return;
     if (niveaux.some((n) => n.nom === nom)) {
-      toast.error(`Le niveau "${nom}" existe déjà`);
+      notify.error(`Le niveau "${nom}" existe déjà`);
       return;
     }
     createNiveau.mutate(nom, {
       onSuccess: () => {
         setNewNiveauNom("");
-        toast.success(`Niveau "${nom}" ajouté`);
+        notify.success(`Niveau "${nom}" ajouté`);
       },
-      onError: (err) => toast.error(err.message),
+      onError: (err) => notify.error(err.message),
     });
   };
 

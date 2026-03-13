@@ -9,7 +9,7 @@ import {
   ArrowLeft,
   Sparkles,
 } from "lucide-react";
-import { toast } from "sonner";
+import { notify } from "@/lib/toast";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useOnboard } from "@/hooks/useSaas";
@@ -89,11 +89,11 @@ export default function Onboarding() {
   const handleSubmit = () => {
     onboard.mutate(form, {
       onSuccess: () => {
-        toast.success("Ecole creee avec succes !");
+        notify.success("Ecole creee avec succes !");
         setStep(3);
       },
       onError: (err: Error) => {
-        toast.error(err.message || "Erreur lors de la creation");
+        notify.error(err.message || "Erreur lors de la creation");
       },
     });
   };

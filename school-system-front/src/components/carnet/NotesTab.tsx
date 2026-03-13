@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import { Save, PenLine, GraduationCap, Users } from "lucide-react";
-import { toast } from "sonner";
+import { notify } from "@/lib/toast";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -114,7 +114,7 @@ export default function NotesTab() {
       }));
 
     if (notesToSave.length === 0) {
-      toast.error("Aucune note à sauvegarder");
+      notify.error("Aucune note à sauvegarder");
       return;
     }
 
@@ -123,13 +123,13 @@ export default function NotesTab() {
       (n) => n.valeur != null && (n.valeur < 0 || n.valeur > 20)
     );
     if (invalid) {
-      toast.error("Les notes doivent être entre 0 et 20");
+      notify.error("Les notes doivent être entre 0 et 20");
       return;
     }
 
     upsertNotes.mutate(notesToSave, {
-      onSuccess: () => toast.success("Notes sauvegardées avec succès"),
-      onError: () => toast.error("Erreur lors de la sauvegarde"),
+      onSuccess: () => notify.success("Notes sauvegardées avec succès"),
+      onError: () => notify.error("Erreur lors de la sauvegarde"),
     });
   };
 

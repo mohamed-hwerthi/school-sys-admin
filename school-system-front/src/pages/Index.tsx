@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Mail, Lock, GraduationCap, ArrowRight, Sparkles, Loader2, AlertCircle, ShieldCheck, ArrowLeft } from "lucide-react";
+import { Mail, Lock, GraduationCap, ArrowRight, Sparkles, Loader2, AlertCircle, ShieldCheck, ArrowLeft, Crown, Briefcase, BookOpen, Calculator, Users } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { loginSchema } from "@/lib/auth-schema";
 import schoolHero from "@/assets/school-hero.png";
 
 const container = {
@@ -44,6 +45,13 @@ const Index = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+
+    const result = loginSchema.safeParse({ email, password });
+    if (!result.success) {
+      setError(result.error.errors[0].message);
+      return;
+    }
+
     setLoading(true);
     try {
       const response = await login({ email, password });
@@ -83,6 +91,31 @@ const Index = () => {
   const handleTotpChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value.replace(/\D/g, "").slice(0, 6);
     setTotpCode(val);
+  };
+
+  const demoAccounts = [
+    { email: "admin@school.dev", password: "admin123", role: "Super Admin", icon: Crown, color: "bg-yellow-100 text-yellow-700 border-yellow-200" },
+    { email: "directeur@school.dev", password: "directeur123", role: "Directeur", icon: Briefcase, color: "bg-blue-100 text-blue-700 border-blue-200" },
+    { email: "prof@school.dev", password: "prof123", role: "Enseignant", icon: BookOpen, color: "bg-emerald-100 text-emerald-700 border-emerald-200" },
+    { email: "comptable@school.dev", password: "comptable123", role: "Comptable", icon: Calculator, color: "bg-orange-100 text-orange-700 border-orange-200" },
+    { email: "parent@school.dev", password: "parent123", role: "Parent", icon: Users, color: "bg-sky-100 text-sky-700 border-sky-200" },
+  ];
+
+  const handleQuickLogin = async (demoEmail: string, demoPassword: string) => {
+    setError(null);
+    setLoading(true);
+    setEmail(demoEmail);
+    setPassword(demoPassword);
+    try {
+      const response = await login({ email: demoEmail, password: demoPassword });
+      if (!response.twoFactorRequired) {
+        navigate("/dashboard");
+      }
+    } catch (err: any) {
+      setError(err.message || "Identifiants incorrects");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -392,7 +425,36 @@ const Index = () => {
             </div>
           </motion.div>
 
-          <motion.p variants={item} className="mt-8 text-[10px] text-muted-foreground">
+          {/* Demo accounts quick login */}
+          {!twoFactorPending && (
+            <motion.div variants={item} className="mt-6 w-full max-w-[280px]">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="h-px flex-1 bg-border" />
+                <span className="text-[10px] font-medium text-muted-foreground">COMPTES DEMO</span>
+                <div className="h-px flex-1 bg-border" />
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                {demoAccounts.map((acc) => {
+                  const Icon = acc.icon;
+                  return (
+                    <motion.button
+                      key={acc.email}
+                      whileHover={{ scale: 1.05, y: -2 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => handleQuickLogin(acc.email, acc.password)}
+                      disabled={loading}
+                      className={`flex flex-col items-center gap-1 rounded-xl border p-2.5 transition-all hover:shadow-md disabled:opacity-50 cursor-pointer ${acc.color}`}
+                    >
+                      <Icon className="h-4 w-4" />
+                      <span className="text-[9px] font-bold leading-tight">{acc.role}</span>
+                    </motion.button>
+                  );
+                })}
+              </div>
+            </motion.div>
+          )}
+
+          <motion.p variants={item} className="mt-6 text-[10px] text-muted-foreground">
             © 2026 EcoleNet — Tous droits réservés
           </motion.p>
         </motion.div>

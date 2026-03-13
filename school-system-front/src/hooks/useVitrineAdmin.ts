@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { vitrineAdminApi } from "@/api/vitrine-admin.api";
-import { toast } from "sonner";
+import { notify } from "@/lib/toast";
 import type { VitrineConfig, VitrinePage, VitrineSection, VitrineAnnouncement, VitrineGalleryItem, VitrineAnalytics, VitrineContact } from "@/types/vitrine";
 
 const KEYS = {
@@ -29,7 +29,7 @@ export function useVitrineAnalytics() {
 export function useVitrineUpload() {
   return useMutation({
     mutationFn: (file: File) => vitrineAdminApi.uploadImage(file),
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => notify.error(e.message),
   });
 }
 
@@ -48,9 +48,9 @@ export function useUpdateVitrineConfig() {
     mutationFn: (dto: Partial<VitrineConfig>) => vitrineAdminApi.updateConfig(dto),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: KEYS.config });
-      toast.success("Configuration vitrine mise à jour");
+      notify.success("Configuration vitrine mise à jour");
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => notify.error(e.message),
   });
 }
 
@@ -69,9 +69,9 @@ export function useCreateVitrinePage() {
     mutationFn: (dto: Partial<VitrinePage>) => vitrineAdminApi.createPage(dto),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: KEYS.pages });
-      toast.success("Page créée");
+      notify.success("Page créée");
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => notify.error(e.message),
   });
 }
 
@@ -81,9 +81,9 @@ export function useUpdateVitrinePage() {
     mutationFn: ({ id, dto }: { id: number; dto: Partial<VitrinePage> }) => vitrineAdminApi.updatePage(id, dto),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: KEYS.pages });
-      toast.success("Page mise à jour");
+      notify.success("Page mise à jour");
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => notify.error(e.message),
   });
 }
 
@@ -93,9 +93,9 @@ export function useDeleteVitrinePage() {
     mutationFn: (id: number) => vitrineAdminApi.deletePage(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: KEYS.pages });
-      toast.success("Page supprimée");
+      notify.success("Page supprimée");
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => notify.error(e.message),
   });
 }
 
@@ -117,9 +117,9 @@ export function useCreateVitrineSection() {
     onSuccess: (_, { pageId }) => {
       qc.invalidateQueries({ queryKey: KEYS.sections(pageId) });
       qc.invalidateQueries({ queryKey: KEYS.pages });
-      toast.success("Section créée");
+      notify.success("Section créée");
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => notify.error(e.message),
   });
 }
 
@@ -130,9 +130,9 @@ export function useUpdateVitrineSection() {
       vitrineAdminApi.updateSection(id, dto),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["vitrine-admin"] });
-      toast.success("Section mise à jour");
+      notify.success("Section mise à jour");
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => notify.error(e.message),
   });
 }
 
@@ -142,9 +142,9 @@ export function useDeleteVitrineSection() {
     mutationFn: (id: number) => vitrineAdminApi.deleteSection(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["vitrine-admin"] });
-      toast.success("Section supprimée");
+      notify.success("Section supprimée");
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => notify.error(e.message),
   });
 }
 
@@ -163,9 +163,9 @@ export function useAddVitrineGalleryItem() {
     mutationFn: (dto: Partial<VitrineGalleryItem>) => vitrineAdminApi.addGalleryItem(dto),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: KEYS.gallery });
-      toast.success("Image ajoutée");
+      notify.success("Image ajoutée");
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => notify.error(e.message),
   });
 }
 
@@ -175,9 +175,9 @@ export function useDeleteVitrineGalleryItem() {
     mutationFn: (id: number) => vitrineAdminApi.deleteGalleryItem(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: KEYS.gallery });
-      toast.success("Image supprimée");
+      notify.success("Image supprimée");
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => notify.error(e.message),
   });
 }
 
@@ -196,9 +196,9 @@ export function useCreateVitrineAnnouncement() {
     mutationFn: (dto: Partial<VitrineAnnouncement>) => vitrineAdminApi.createAnnouncement(dto),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: KEYS.announcements });
-      toast.success("Annonce créée");
+      notify.success("Annonce créée");
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => notify.error(e.message),
   });
 }
 
@@ -209,9 +209,9 @@ export function useUpdateVitrineAnnouncement() {
       vitrineAdminApi.updateAnnouncement(id, dto),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: KEYS.announcements });
-      toast.success("Annonce mise à jour");
+      notify.success("Annonce mise à jour");
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => notify.error(e.message),
   });
 }
 
@@ -221,9 +221,9 @@ export function useDeleteVitrineAnnouncement() {
     mutationFn: (id: number) => vitrineAdminApi.deleteAnnouncement(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: KEYS.announcements });
-      toast.success("Annonce supprimée");
+      notify.success("Annonce supprimée");
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => notify.error(e.message),
   });
 }
 
@@ -252,7 +252,7 @@ export function useMarkContactAsRead() {
       qc.invalidateQueries({ queryKey: KEYS.contacts });
       qc.invalidateQueries({ queryKey: KEYS.unreadCount });
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => notify.error(e.message),
   });
 }
 
@@ -264,8 +264,8 @@ export function useReplyToContact() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: KEYS.contacts });
       qc.invalidateQueries({ queryKey: KEYS.unreadCount });
-      toast.success("Réponse envoyée");
+      notify.success("Réponse envoyée");
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => notify.error(e.message),
   });
 }

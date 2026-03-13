@@ -15,7 +15,7 @@ import {
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { toast } from "sonner";
+import { notify } from "@/lib/toast";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -175,10 +175,10 @@ export default function InscriptionPubliquePage() {
     createMutation.mutate(finalData, {
       onSuccess: (inscription) => {
         setSubmittedInscription(inscription);
-        toast.success("Inscription soumise avec succes !");
+        notify.success("Inscription soumise avec succes !");
       },
       onError: (error) => {
-        toast.error(
+        notify.error(
           error instanceof Error
             ? error.message
             : "Erreur lors de la soumission"
@@ -190,7 +190,7 @@ export default function InscriptionPubliquePage() {
   const handleCopyDossier = () => {
     if (submittedInscription?.numeroDossier) {
       navigator.clipboard.writeText(submittedInscription.numeroDossier);
-      toast.success("Numero de dossier copie !");
+      notify.success("Numero de dossier copie !");
     }
   };
 

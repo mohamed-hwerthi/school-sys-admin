@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { toast } from "sonner";
+import { notify } from "@/lib/toast";
 import type { Student } from "@/types/student";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -93,7 +93,7 @@ export function CommunicationDialog({
   const handleSend = () => {
     if (!student || !objet.trim() || !contenu.trim()) return;
     // TODO: integrate with backend Communication API when available
-    toast.success(`${type} envoyé (simulation)`, {
+    notify.success(`${type} envoyé (simulation)`, {
       description: `${type} envoyé pour ${student.prenom} ${student.nom}`,
     });
     setObjet("");

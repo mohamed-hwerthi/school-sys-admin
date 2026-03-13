@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/table";
 import { Upload, Download, FileSpreadsheet, CheckCircle, XCircle, AlertTriangle } from "lucide-react";
 import { useImportFile, useDownloadTemplate } from "@/hooks/useImportExport";
-import { toast } from "sonner";
+import { notify } from "@/lib/toast";
 import type { ImportType, ImportResult } from "@/types/import-export";
 
 interface ImportDialogProps {
@@ -51,7 +51,7 @@ export default function ImportDialog({ type, onComplete, trigger }: ImportDialog
       setFile(droppedFile);
       setResult(null);
     } else {
-      toast.error("Format de fichier non supporte. Utilisez CSV ou XLSX.");
+      notify.error("Format de fichier non supporte. Utilisez CSV ou XLSX.");
     }
   }, []);
 
@@ -61,7 +61,7 @@ export default function ImportDialog({ type, onComplete, trigger }: ImportDialog
       setFile(selectedFile);
       setResult(null);
     } else {
-      toast.error("Format de fichier non supporte. Utilisez CSV ou XLSX.");
+      notify.error("Format de fichier non supporte. Utilisez CSV ou XLSX.");
     }
   };
 
@@ -81,27 +81,27 @@ export default function ImportDialog({ type, onComplete, trigger }: ImportDialog
       setResult(importResult);
 
       if (importResult.errors.length === 0) {
-        toast.success(
+        notify.success(
           `Import reussi: ${importResult.imported} enregistrement(s) importe(s).`
         );
       } else {
-        toast.warning(
+        notify.warning(
           `Import partiel: ${importResult.imported} importe(s), ${importResult.skipped} ignore(s).`
         );
       }
 
       onComplete?.();
     } catch (error) {
-      toast.error("Erreur lors de l'import. Verifiez le format du fichier.");
+      notify.error("Erreur lors de l'import. Verifiez le format du fichier.");
     }
   };
 
   const handleDownloadTemplate = async (format: "csv" | "xlsx") => {
     try {
       await templateMutation.mutateAsync({ type, format });
-      toast.success("Template telecharge.");
+      notify.success("Template telecharge.");
     } catch {
-      toast.error("Erreur lors du telechargement du template.");
+      notify.error("Erreur lors du telechargement du template.");
     }
   };
 

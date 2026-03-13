@@ -15,7 +15,7 @@ import {
   BookCopy,
   Clock,
 } from "lucide-react";
-import { toast } from "sonner";
+import { notify } from "@/lib/toast";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -143,15 +143,15 @@ function CatalogueTab() {
 
   const handleCreate = () => {
     if (!form.titre) {
-      toast.error("Le titre est obligatoire");
+      notify.error("Le titre est obligatoire");
       return;
     }
     createLivre.mutate(form, {
       onSuccess: () => {
-        toast.success("Livre ajoute au catalogue");
+        notify.success("Livre ajoute au catalogue");
         setAddDialogOpen(false);
       },
-      onError: (err) => toast.error(err.message),
+      onError: (err) => notify.error(err.message),
     });
   };
 
@@ -161,10 +161,10 @@ function CatalogueTab() {
       { id: editLivre.id, data: form },
       {
         onSuccess: () => {
-          toast.success("Livre modifie");
+          notify.success("Livre modifie");
           setEditLivre(null);
         },
-        onError: (err) => toast.error(err.message),
+        onError: (err) => notify.error(err.message),
       }
     );
   };
@@ -173,10 +173,10 @@ function CatalogueTab() {
     if (!deleteTarget) return;
     deleteLivre.mutate(deleteTarget.id, {
       onSuccess: () => {
-        toast.success("Livre supprime");
+        notify.success("Livre supprime");
         setDeleteTarget(null);
       },
-      onError: (err) => toast.error(err.message),
+      onError: (err) => notify.error(err.message),
     });
   };
 
@@ -489,23 +489,23 @@ function EmpruntsTab() {
 
   const handleCreate = () => {
     if (!form.livreId || !form.eleveId || !form.dateRetourPrevue) {
-      toast.error("Veuillez remplir tous les champs obligatoires");
+      notify.error("Veuillez remplir tous les champs obligatoires");
       return;
     }
     createEmprunt.mutate(form, {
       onSuccess: () => {
-        toast.success("Emprunt enregistre");
+        notify.success("Emprunt enregistre");
         setAddDialogOpen(false);
         setForm(emptyForm);
       },
-      onError: (err) => toast.error(err.message),
+      onError: (err) => notify.error(err.message),
     });
   };
 
   const handleRetour = (id: number) => {
     retourEmprunt.mutate(id, {
-      onSuccess: () => toast.success("Livre retourne avec succes"),
-      onError: (err) => toast.error(err.message),
+      onSuccess: () => notify.success("Livre retourne avec succes"),
+      onError: (err) => notify.error(err.message),
     });
   };
 
@@ -683,8 +683,8 @@ function RetardsTab() {
 
   const handleRetour = (id: number) => {
     retourEmprunt.mutate(id, {
-      onSuccess: () => toast.success("Livre retourne avec succes"),
-      onError: (err) => toast.error(err.message),
+      onSuccess: () => notify.success("Livre retourne avec succes"),
+      onError: (err) => notify.error(err.message),
     });
   };
 

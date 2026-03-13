@@ -13,7 +13,7 @@ import {
   DollarSign,
   PauseCircle,
 } from "lucide-react";
-import { toast } from "sonner";
+import { notify } from "@/lib/toast";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -162,15 +162,15 @@ export default function Bourses() {
 
   const handleCreate = () => {
     if (!form.studentId || !form.label || !form.montant) {
-      toast.error("Veuillez remplir les champs obligatoires");
+      notify.error("Veuillez remplir les champs obligatoires");
       return;
     }
     createBourse.mutate(form, {
       onSuccess: () => {
-        toast.success("Bourse ajoutee");
+        notify.success("Bourse ajoutee");
         setAddDialogOpen(false);
       },
-      onError: (err) => toast.error(err.message),
+      onError: (err) => notify.error(err.message),
     });
   };
 
@@ -180,10 +180,10 @@ export default function Bourses() {
       { id: editBourse.id, data: form },
       {
         onSuccess: () => {
-          toast.success("Bourse modifiee");
+          notify.success("Bourse modifiee");
           setEditBourse(null);
         },
-        onError: (err) => toast.error(err.message),
+        onError: (err) => notify.error(err.message),
       }
     );
   };
@@ -192,10 +192,10 @@ export default function Bourses() {
     if (!deleteTarget) return;
     deletebourseMutation.mutate(deleteTarget.id, {
       onSuccess: () => {
-        toast.success("Bourse supprimee");
+        notify.success("Bourse supprimee");
         setDeleteTarget(null);
       },
-      onError: (err) => toast.error(err.message),
+      onError: (err) => notify.error(err.message),
     });
   };
 

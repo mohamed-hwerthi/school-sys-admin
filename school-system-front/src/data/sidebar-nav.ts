@@ -4,7 +4,6 @@ import {
   UserCog,
   Calendar,
   ClipboardCheck,
-  CalendarDays,
   FileText,
   Newspaper,
   BookOpen,
@@ -24,7 +23,6 @@ import {
   AlertTriangle,
   GraduationCap,
   Receipt,
-  FileSpreadsheet,
   Briefcase,
   CalendarClock,
   ShieldCheck,
@@ -52,108 +50,151 @@ import {
 export type NavItem = {
   title: string;
   icon: React.ElementType;
-  iconBg: string;
-  iconColor: string;
   url: string;
-  roles?: string[]; // roles that can see this item. undefined = all roles
+  roles?: string[];
 };
 
 export type NavSection = {
   label: string;
-  collapsible: boolean;
+  icon: React.ElementType;
+  color: string;
   items: NavItem[];
+  roles?: string[];
 };
 
 export const sidebarSections: NavSection[] = [
   {
-    label: "Principal",
-    collapsible: true,
+    label: "Accueil",
+    icon: Home,
+    color: "text-blue-500",
     items: [
-      { title: "Général", icon: Home, iconBg: "bg-blue-100", iconColor: "text-blue-600", url: "/dashboard" },
-      { title: "École", icon: School, iconBg: "bg-amber-100", iconColor: "text-amber-600", url: "/dashboard/ecole", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR"] },
-      { title: "Élèves", icon: Users, iconBg: "bg-emerald-100", iconColor: "text-emerald-600", url: "/dashboard/eleves", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR", "ENSEIGNANT", "COMPTABLE"] },
-      { title: "Enseignants", icon: UserCog, iconBg: "bg-orange-100", iconColor: "text-orange-600", url: "/dashboard/enseignants", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR"] },
-      { title: "Absences", icon: UserCheck, iconBg: "bg-red-100", iconColor: "text-red-500", url: "/dashboard/absences", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR", "ENSEIGNANT"] },
-      { title: "Inscriptions", icon: ClipboardList, iconBg: "bg-teal-100", iconColor: "text-teal-600", url: "/dashboard/inscriptions", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR"] },
-      { title: "Portail Parent", icon: GraduationCap, iconBg: "bg-sky-100", iconColor: "text-sky-600", url: "/dashboard/portail-parent", roles: ["PARENT"] },
+      { title: "Tableau de bord", icon: Home, url: "/dashboard" },
+      { title: "Mon école", icon: School, url: "/dashboard/ecole", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR"] },
+      { title: "Portail Parent", icon: GraduationCap, url: "/dashboard/portail-parent", roles: ["PARENT"] },
+    ],
+  },
+  {
+    label: "Scolarité",
+    icon: Users,
+    color: "text-emerald-500",
+    items: [
+      { title: "Élèves", icon: Users, url: "/dashboard/eleves", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR", "ENSEIGNANT", "COMPTABLE"] },
+      { title: "Inscriptions", icon: ClipboardList, url: "/dashboard/inscriptions", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR"] },
+      { title: "Absences", icon: UserCheck, url: "/dashboard/absences", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR", "ENSEIGNANT"] },
+      { title: "Discipline", icon: AlertTriangle, url: "/dashboard/discipline", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR", "ENSEIGNANT"] },
+      { title: "Niveaux & Classes", icon: GraduationCap, url: "/dashboard/config/niveaux", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR"] },
     ],
   },
   {
     label: "Pédagogie",
-    collapsible: true,
+    icon: BookOpen,
+    color: "text-purple-500",
     items: [
-      { title: "Emploi du temps", icon: Clock, iconBg: "bg-purple-100", iconColor: "text-purple-600", url: "/dashboard/emploi-du-temps" },
-      { title: "Emploi - Salles", icon: Calendar, iconBg: "bg-purple-100", iconColor: "text-purple-600", url: "/dashboard/emploi-salles", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR"] },
-      { title: "Évaluations", icon: ClipboardCheck, iconBg: "bg-rose-100", iconColor: "text-rose-600", url: "/dashboard/evaluations", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR", "ENSEIGNANT"] },
-      { title: "Devoirs", icon: PenTool, iconBg: "bg-indigo-100", iconColor: "text-indigo-600", url: "/dashboard/devoirs", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR", "ENSEIGNANT"] },
-      { title: "Examens en ligne", icon: FileQuestion, iconBg: "bg-violet-100", iconColor: "text-violet-600", url: "/dashboard/quiz", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR", "ENSEIGNANT"] },
-      { title: "Année scolaire", icon: CalendarClock, iconBg: "bg-sky-100", iconColor: "text-sky-600", url: "/dashboard/annee-scolaire", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR"] },
+      { title: "Emploi du temps", icon: Clock, url: "/dashboard/emploi-du-temps" },
+      { title: "Salles", icon: Calendar, url: "/dashboard/emploi-salles", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR"] },
+      { title: "Évaluations", icon: ClipboardCheck, url: "/dashboard/evaluations", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR", "ENSEIGNANT"] },
+      { title: "Devoirs", icon: PenTool, url: "/dashboard/devoirs", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR", "ENSEIGNANT"] },
+      { title: "Examens", icon: FileQuestion, url: "/dashboard/quiz", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR", "ENSEIGNANT"] },
+      { title: "Carnets de notes", icon: BookOpen, url: "/dashboard/carnets", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR", "ENSEIGNANT", "PARENT"] },
+      { title: "Année scolaire", icon: CalendarClock, url: "/dashboard/annee-scolaire", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR"] },
     ],
   },
   {
-    label: "Vie Scolaire",
-    collapsible: true,
+    label: "Bulletins",
+    icon: Printer,
+    color: "text-indigo-500",
+    roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR"],
     items: [
-      { title: "Discipline", icon: AlertTriangle, iconBg: "bg-yellow-100", iconColor: "text-yellow-600", url: "/dashboard/discipline", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR", "ENSEIGNANT"] },
-      { title: "Bibliothèque", icon: Library, iconBg: "bg-amber-100", iconColor: "text-amber-600", url: "/dashboard/bibliotheque", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR"] },
-      { title: "Transport", icon: Bus, iconBg: "bg-blue-100", iconColor: "text-blue-600", url: "/dashboard/transport", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR"] },
-      { title: "Cantine", icon: UtensilsCrossed, iconBg: "bg-orange-100", iconColor: "text-orange-600", url: "/dashboard/cantine", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR"] },
+      { title: "Templates", icon: Palette, url: "/dashboard/bulletin-templates" },
+      { title: "Impression masse", icon: Printer, url: "/dashboard/bulletins-masse" },
+      { title: "Stats réussite", icon: TrendingUp, url: "/dashboard/stats-reussite" },
+      { title: "Comparatif", icon: Activity, url: "/dashboard/comparatif" },
     ],
   },
   {
-    label: "Documents",
-    collapsible: true,
+    label: "Vie scolaire",
+    icon: Library,
+    color: "text-amber-500",
+    roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR"],
     items: [
-      { title: "Rapports", icon: FileText, iconBg: "bg-indigo-100", iconColor: "text-indigo-600", url: "/dashboard/rapports", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR"] },
-      { title: "Circulaires", icon: Newspaper, iconBg: "bg-lime-100", iconColor: "text-lime-600", url: "/dashboard/circulaires" },
-      { title: "Carnets", icon: BookOpen, iconBg: "bg-slate-100", iconColor: "text-slate-600", url: "/dashboard/carnets", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR", "ENSEIGNANT", "PARENT"] },
-      { title: "Templates Bulletin", icon: Palette, iconBg: "bg-indigo-100", iconColor: "text-indigo-600", url: "/dashboard/bulletin-templates", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR"] },
-      { title: "Bulletins en masse", icon: Printer, iconBg: "bg-sky-100", iconColor: "text-sky-600", url: "/dashboard/bulletins-masse", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR"] },
-      { title: "Stats Reussite", icon: TrendingUp, iconBg: "bg-emerald-100", iconColor: "text-emerald-600", url: "/dashboard/stats-reussite", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR"] },
-      { title: "Comparatif", icon: Activity, iconBg: "bg-fuchsia-100", iconColor: "text-fuchsia-600", url: "/dashboard/comparatif", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR"] },
-      { title: "Génération docs", icon: FileDown, iconBg: "bg-cyan-100", iconColor: "text-cyan-600", url: "/dashboard/documents", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR"] },
-      { title: "Factures", icon: Receipt, iconBg: "bg-teal-100", iconColor: "text-teal-600", url: "/dashboard/factures", roles: ["SUPER_ADMIN", "ADMIN", "COMPTABLE"] },
-      { title: "Notifications", icon: BellRing, iconBg: "bg-rose-100", iconColor: "text-rose-600", url: "/dashboard/notifications" },
-      { title: "Annonces", icon: Megaphone, iconBg: "bg-amber-100", iconColor: "text-amber-600", url: "/dashboard/annonces" },
+      { title: "Bibliothèque", icon: Library, url: "/dashboard/bibliotheque" },
+      { title: "Transport", icon: Bus, url: "/dashboard/transport" },
+      { title: "Cantine", icon: UtensilsCrossed, url: "/dashboard/cantine" },
     ],
   },
   {
-    label: "RH & Personnel",
-    collapsible: true,
+    label: "Finance",
+    icon: DollarSign,
+    color: "text-teal-500",
+    roles: ["SUPER_ADMIN", "ADMIN", "COMPTABLE", "DIRECTEUR"],
     items: [
-      { title: "Contrats & Congés", icon: Briefcase, iconBg: "bg-cyan-100", iconColor: "text-cyan-600", url: "/dashboard/contrats", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR"] },
-      { title: "Pointage", icon: UserPlus, iconBg: "bg-green-100", iconColor: "text-green-600", url: "/dashboard/rh/pointage", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR"] },
-      { title: "Paie", icon: Banknote, iconBg: "bg-emerald-100", iconColor: "text-emerald-600", url: "/dashboard/rh/paie", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR"] },
-      { title: "Formations", icon: Award, iconBg: "bg-purple-100", iconColor: "text-purple-600", url: "/dashboard/rh/formations", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR"] },
-      { title: "Éval. enseignants", icon: UserCog, iconBg: "bg-orange-100", iconColor: "text-orange-600", url: "/dashboard/teacher-evaluations", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR"] },
+      { title: "Paiements", icon: DollarSign, url: "/dashboard/finance", roles: ["SUPER_ADMIN", "ADMIN", "COMPTABLE"] },
+      { title: "Dépenses", icon: TrendingDown, url: "/dashboard/finance/depenses", roles: ["SUPER_ADMIN", "ADMIN", "COMPTABLE"] },
+      { title: "Trésorerie", icon: Wallet, url: "/dashboard/finance/tresorerie", roles: ["SUPER_ADMIN", "ADMIN", "COMPTABLE"] },
+      { title: "Caisse", icon: Vault, url: "/dashboard/finance/caisse", roles: ["SUPER_ADMIN", "ADMIN", "COMPTABLE"] },
+      { title: "Factures", icon: Receipt, url: "/dashboard/factures", roles: ["SUPER_ADMIN", "ADMIN", "COMPTABLE"] },
+      { title: "Remises", icon: BadgePercent, url: "/dashboard/finance/remises-penalites", roles: ["SUPER_ADMIN", "ADMIN", "COMPTABLE"] },
+      { title: "Relances", icon: Bell, url: "/dashboard/finance/relances", roles: ["SUPER_ADMIN", "ADMIN", "COMPTABLE"] },
+      { title: "Rapports", icon: BarChart3, url: "/dashboard/finance/rapports" },
+    ],
+  },
+  {
+    label: "Communication",
+    icon: Megaphone,
+    color: "text-rose-500",
+    items: [
+      { title: "Annonces", icon: Megaphone, url: "/dashboard/annonces" },
+      { title: "Notifications", icon: BellRing, url: "/dashboard/notifications" },
+      { title: "Circulaires", icon: Newspaper, url: "/dashboard/circulaires" },
+    ],
+  },
+  {
+    label: "Enseignants & RH",
+    icon: Briefcase,
+    color: "text-cyan-500",
+    roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR"],
+    items: [
+      { title: "Enseignants", icon: UserCog, url: "/dashboard/enseignants" },
+      { title: "Contrats & Congés", icon: Briefcase, url: "/dashboard/contrats" },
+      { title: "Pointage", icon: UserPlus, url: "/dashboard/rh/pointage" },
+      { title: "Paie", icon: Banknote, url: "/dashboard/rh/paie" },
+      { title: "Formations", icon: Award, url: "/dashboard/rh/formations" },
+      { title: "Évaluations", icon: UserCog, url: "/dashboard/teacher-evaluations" },
     ],
   },
   {
     label: "Analytics",
-    collapsible: true,
+    icon: Target,
+    color: "text-violet-500",
+    roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR", "ENSEIGNANT"],
     items: [
-      { title: "Dashboard Analytics", icon: Target, iconBg: "bg-violet-100", iconColor: "text-violet-600", url: "/dashboard/analytics", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR"] },
-      { title: "Suivi élève", icon: Users, iconBg: "bg-blue-100", iconColor: "text-blue-600", url: "/dashboard/suivi-eleve", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR", "ENSEIGNANT"] },
-      { title: "Statistique", icon: PieChart, iconBg: "bg-fuchsia-100", iconColor: "text-fuchsia-600", url: "/dashboard/statistique", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR"] },
+      { title: "Dashboard", icon: Target, url: "/dashboard/analytics", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR"] },
+      { title: "Suivi élève", icon: Users, url: "/dashboard/suivi-eleve" },
+      { title: "Statistiques", icon: PieChart, url: "/dashboard/statistique", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR"] },
+    ],
+  },
+  {
+    label: "Documents",
+    icon: FileText,
+    color: "text-slate-500",
+    roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR"],
+    items: [
+      { title: "Rapports", icon: FileText, url: "/dashboard/rapports" },
+      { title: "Génération", icon: FileDown, url: "/dashboard/documents" },
+      { title: "Vitrine web", icon: Eye, url: "/dashboard/vitrine" },
     ],
   },
   {
     label: "Administration",
-    collapsible: true,
+    icon: Settings,
+    color: "text-gray-500",
+    roles: ["SUPER_ADMIN", "ADMIN"],
     items: [
-      { title: "Utilisateurs", icon: ShieldCheck, iconBg: "bg-violet-100", iconColor: "text-violet-600", url: "/dashboard/utilisateurs", roles: ["SUPER_ADMIN", "ADMIN"] },
-      { title: "Configuration", icon: Settings, iconBg: "bg-amber-100", iconColor: "text-amber-600", url: "/dashboard/configuration", roles: ["SUPER_ADMIN", "ADMIN"] },
-      { title: "Niveaux & Classes", icon: GraduationCap, iconBg: "bg-pink-100", iconColor: "text-pink-600", url: "/dashboard/config/niveaux", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR"] },
-      { title: "Intégrations", icon: Plug, iconBg: "bg-slate-100", iconColor: "text-slate-600", url: "/dashboard/integrations", roles: ["SUPER_ADMIN", "ADMIN"] },
-      { title: "Super Admin", icon: Crown, iconBg: "bg-yellow-100", iconColor: "text-yellow-600", url: "/dashboard/super-admin", roles: ["SUPER_ADMIN"] },
-      { title: "Finance", icon: DollarSign, iconBg: "bg-teal-100", iconColor: "text-teal-600", url: "/dashboard/finance", roles: ["SUPER_ADMIN", "ADMIN", "COMPTABLE"] },
-      { title: "Dépenses", icon: TrendingDown, iconBg: "bg-red-100", iconColor: "text-red-600", url: "/dashboard/finance/depenses", roles: ["SUPER_ADMIN", "ADMIN", "COMPTABLE"] },
-      { title: "Trésorerie", icon: Wallet, iconBg: "bg-indigo-100", iconColor: "text-indigo-600", url: "/dashboard/finance/tresorerie", roles: ["SUPER_ADMIN", "ADMIN", "COMPTABLE"] },
-      { title: "Remises & Pénalités", icon: BadgePercent, iconBg: "bg-orange-100", iconColor: "text-orange-600", url: "/dashboard/finance/remises-penalites", roles: ["SUPER_ADMIN", "ADMIN", "COMPTABLE"] },
-      { title: "Relances", icon: Bell, iconBg: "bg-cyan-100", iconColor: "text-cyan-600", url: "/dashboard/finance/relances", roles: ["SUPER_ADMIN", "ADMIN", "COMPTABLE"] },
-      { title: "Rapports Financiers", icon: BarChart3, iconBg: "bg-emerald-100", iconColor: "text-emerald-600", url: "/dashboard/finance/rapports", roles: ["SUPER_ADMIN", "ADMIN", "COMPTABLE", "DIRECTEUR"] },
-      { title: "Caisse", icon: Vault, iconBg: "bg-pink-100", iconColor: "text-pink-600", url: "/dashboard/finance/caisse", roles: ["SUPER_ADMIN", "ADMIN", "COMPTABLE"] },
-      { title: "Traçabilité", icon: Eye, iconBg: "bg-violet-100", iconColor: "text-violet-600", url: "/dashboard/tracabilite", roles: ["SUPER_ADMIN", "ADMIN"] },
+      { title: "Utilisateurs", icon: ShieldCheck, url: "/dashboard/utilisateurs" },
+      { title: "Configuration", icon: Settings, url: "/dashboard/configuration" },
+      { title: "Intégrations", icon: Plug, url: "/dashboard/integrations" },
+      { title: "Traçabilité", icon: Eye, url: "/dashboard/tracabilite" },
+      { title: "Super Admin", icon: Crown, url: "/dashboard/super-admin", roles: ["SUPER_ADMIN"] },
     ],
   },
 ];

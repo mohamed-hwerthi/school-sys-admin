@@ -33,7 +33,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { toast } from "sonner";
+import { notify } from "@/lib/toast";
 import {
   useBulletinTemplates,
   useCreateTemplate,
@@ -85,29 +85,29 @@ export default function BulletinTemplates() {
 
   const handleSave = async () => {
     if (!form.nom.trim()) {
-      toast.error("Le nom du template est requis");
+      notify.error("Le nom du template est requis");
       return;
     }
     try {
       if (isEditing && form.id) {
         await updateMut.mutateAsync({ id: form.id, dto: form });
-        toast.success("Template mis a jour");
+        notify.success("Template mis a jour");
       } else {
         await createMut.mutateAsync(form);
-        toast.success("Template cree");
+        notify.success("Template cree");
       }
       setDialogOpen(false);
     } catch {
-      toast.error("Erreur lors de la sauvegarde");
+      notify.error("Erreur lors de la sauvegarde");
     }
   };
 
   const handleActivate = async (id: number) => {
     try {
       await activateMut.mutateAsync(id);
-      toast.success("Template active");
+      notify.success("Template active");
     } catch {
-      toast.error("Erreur lors de l'activation");
+      notify.error("Erreur lors de l'activation");
     }
   };
 
@@ -115,9 +115,9 @@ export default function BulletinTemplates() {
     if (deleteId === null) return;
     try {
       await deleteMut.mutateAsync(deleteId);
-      toast.success("Template supprime");
+      notify.success("Template supprime");
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : "Erreur");
+      notify.error(err instanceof Error ? err.message : "Erreur");
     }
     setDeleteId(null);
   };

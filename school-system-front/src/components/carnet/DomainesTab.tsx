@@ -9,7 +9,7 @@ import {
   ChevronDown,
   ChevronRight,
 } from "lucide-react";
-import { toast } from "sonner";
+import { notify } from "@/lib/toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -97,7 +97,7 @@ export default function DomainesTab() {
   // Domaine CRUD
   const openAddDomaine = () => {
     if (!selectedNiveauId) {
-      toast.error("Veuillez sélectionner un niveau d'abord");
+      notify.error("Veuillez sélectionner un niveau d'abord");
       return;
     }
     setEditDomId(null);
@@ -118,7 +118,7 @@ export default function DomainesTab() {
 
   const handleSaveDomaine = () => {
     if (!domForm.name.trim()) {
-      toast.error("Le nom du domaine est obligatoire");
+      notify.error("Le nom du domaine est obligatoire");
       return;
     }
     if (editDomId) {
@@ -126,19 +126,19 @@ export default function DomainesTab() {
         { id: editDomId, data: domForm },
         {
           onSuccess: () => {
-            toast.success("Domaine modifié");
+            notify.success("Domaine modifié");
             setShowDomDialog(false);
           },
-          onError: () => toast.error("Erreur lors de la modification"),
+          onError: () => notify.error("Erreur lors de la modification"),
         }
       );
     } else {
       createDomaine.mutate(domForm, {
         onSuccess: () => {
-          toast.success("Domaine créé");
+          notify.success("Domaine créé");
           setShowDomDialog(false);
         },
-        onError: () => toast.error("Erreur lors de la création"),
+        onError: () => notify.error("Erreur lors de la création"),
       });
     }
   };
@@ -147,10 +147,10 @@ export default function DomainesTab() {
     if (!deleteTarget) return;
     deleteDomaine.mutate(deleteTarget.id, {
       onSuccess: () => {
-        toast.success("Domaine supprimé");
+        notify.success("Domaine supprimé");
         setDeleteTarget(null);
       },
-      onError: () => toast.error("Erreur lors de la suppression"),
+      onError: () => notify.error("Erreur lors de la suppression"),
     });
   };
 
@@ -174,7 +174,7 @@ export default function DomainesTab() {
 
   const handleSaveSD = () => {
     if (!sdForm.name.trim()) {
-      toast.error("Le nom du sous-domaine est obligatoire");
+      notify.error("Le nom du sous-domaine est obligatoire");
       return;
     }
     if (editSDId) {
@@ -182,19 +182,19 @@ export default function DomainesTab() {
         { id: editSDId, data: sdForm },
         {
           onSuccess: () => {
-            toast.success("Sous-domaine modifié");
+            notify.success("Sous-domaine modifié");
             setShowSDDialog(false);
           },
-          onError: () => toast.error("Erreur"),
+          onError: () => notify.error("Erreur"),
         }
       );
     } else {
       createSD.mutate(sdForm, {
         onSuccess: () => {
-          toast.success("Sous-domaine créé");
+          notify.success("Sous-domaine créé");
           setShowSDDialog(false);
         },
-        onError: () => toast.error("Erreur"),
+        onError: () => notify.error("Erreur"),
       });
     }
   };
@@ -203,10 +203,10 @@ export default function DomainesTab() {
     if (!deleteSDTarget) return;
     deleteSD.mutate(deleteSDTarget.id, {
       onSuccess: () => {
-        toast.success("Sous-domaine supprimé");
+        notify.success("Sous-domaine supprimé");
         setDeleteSDTarget(null);
       },
-      onError: () => toast.error("Erreur"),
+      onError: () => notify.error("Erreur"),
     });
   };
 

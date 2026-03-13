@@ -1,6 +1,14 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { emploiDuTempsApi } from "@/api/emploi-du-temps.api";
-import type { EmploiDuTempsEntry, Creneau, Conflit, Remplacement, RemplacementRequest } from "@/types/emploi-du-temps";
+import type {
+  EmploiDuTempsEntry,
+  Creneau,
+  Conflit,
+  Remplacement,
+  RemplacementRequest,
+  TimetableGenerateRequest,
+  TimetableGenerateResponse,
+} from "@/types/emploi-du-temps";
 
 const EDT_KEY = "emploi-du-temps";
 const CRENEAUX_KEY = "creneaux";
@@ -91,6 +99,17 @@ export function useDeleteRemplacement() {
     mutationFn: (id: number) => emploiDuTempsApi.deleteRemplacement(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: [REMPLACEMENTS_KEY] });
+    },
+  });
+}
+
+// Auto-generation
+export function useGenerateEmploi() {
+  const qc = useQueryClient();
+  return useMutation<TimetableGenerateResponse, Error, TimetableGenerateRequest>({
+    mutationFn: (request) => emploiDuTempsApi.generate(request),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: [EDT_KEY] });
     },
   });
 }

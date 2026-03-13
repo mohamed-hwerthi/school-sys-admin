@@ -23,7 +23,7 @@ import {
   Shield,
   Activity,
 } from "lucide-react";
-import { toast } from "sonner";
+import { notify } from "@/lib/toast";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -157,7 +157,7 @@ export default function Tracabilite() {
           </h1>
           <p className="text-sm text-muted-foreground mt-0.5">Journal d'audit et historique des actions</p>
         </div>
-        <Button variant="outline" size="sm" className="gap-1.5 w-fit" onClick={() => toast.success("Export du journal (simulation)")}>
+        <Button variant="outline" size="sm" className="gap-1.5 w-fit" onClick={() => notify.success("Export du journal (simulation)")}>
           <Download className="h-4 w-4" />
           Exporter le journal
         </Button>

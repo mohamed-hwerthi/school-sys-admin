@@ -8,6 +8,9 @@ import {
   Plus,
   X,
   Clock,
+  Wand2,
+  Trash2,
+  CheckCircle2,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -35,11 +38,13 @@ import {
   useSaveEmploi,
   useCheckConflits,
   useCreateCreneau,
+  useGenerateEmploi,
 } from "@/hooks/useEmploiDuTemps";
 import { useClasses } from "@/hooks/useClasses";
 import { useTeachers } from "@/hooks/useTeachers";
 import { useModules } from "@/hooks/useModules";
-import type { EmploiDuTempsEntry, Creneau, Conflit } from "@/types/emploi-du-temps";
+import type { EmploiDuTempsEntry, Creneau, Conflit, TeachingAssignment, TimetableGenerateResponse } from "@/types/emploi-du-temps";
+import { MOCK_ROOMS } from "@/data/rooms";
 
 const JOURS = [
   { value: 1, label: "Lundi" },
@@ -89,6 +94,16 @@ export default function EmploiDuTempsPage() {
   const [localEntries, setLocalEntries] = useState<EmploiDuTempsEntry[]>([]);
   const [hasLocalChanges, setHasLocalChanges] = useState(false);
 
+  // Generation state
+  const [generateDialogOpen, setGenerateDialogOpen] = useState(false);
+  const [assignments, setAssignments] = useState<TeachingAssignment[]>([]);
+  const [newAssignment, setNewAssignment] = useState<TeachingAssignment>({
+    classeId: 0, moduleId: 0, enseignantId: 0, nbHeures: 1,
+  });
+  const [selectedRooms, setSelectedRooms] = useState<string[]>([]);
+  const [solverTimeout, setSolverTimeout] = useState(30);
+  const [generateResult, setGenerateResult] = useState<TimetableGenerateResponse | null>(null);
+
   const { data: classes = [] } = useClasses();
   const { teachers } = useTeachers();
   const { data: modules = [] } = useModules();
@@ -99,6 +114,7 @@ export default function EmploiDuTempsPage() {
   const saveMutation = useSaveEmploi();
   const checkConflitsMutation = useCheckConflits();
   const createCreneauMutation = useCreateCreneau();
+  const generateMutation = useGenerateEmploi();
 
   // Sync server entries to local when they change and no local edits
   const entries = hasLocalChanges ? localEntries : serverEntries;
@@ -210,6 +226,43 @@ export default function EmploiDuTempsPage() {
     });
   };
 
+  // --- Generation handlers ---
+  const handleAddAssignment = () => {
+    if (!newAssignment.classeId || !newAssignment.moduleId || !newAssignment.enseignantId || newAssignment.nbHeures < 1) return;
+    setAssignments([...assignments, { ...newAssignment }]);
+    setNewAssignment({ classeId: 0, moduleId: 0, enseignantId: 0, nbHeures: 1 });
+  };
+
+  const handleRemoveAssignment = (index: number) => {
+    setAssignments(assignments.filter((_, i) => i !== index));
+  };
+
+  const handleToggleRoom = (roomName: string) => {
+    setSelectedRooms((prev) =>
+      prev.includes(roomName) ? prev.filter((r) => r !== roomName) : [...prev, roomName]
+    );
+  };
+
+  const handleGenerate = () => {
+    if (assignments.length === 0 || selectedRooms.length === 0) return;
+    generateMutation.mutate(
+      { assignments, rooms: selectedRooms, solverTimeoutSeconds: solverTimeout },
+      {
+        onSuccess: (result) => {
+          setGenerateResult(result);
+          setHasLocalChanges(false);
+        },
+      }
+    );
+  };
+
+  const handleCloseGenerateDialog = () => {
+    setGenerateDialogOpen(false);
+    setGenerateResult(null);
+  };
+
+  const availableRooms = MOCK_ROOMS.filter((r) => r.statut !== "En maintenance");
+
   const isLoading = creneauxLoading || (entriesLoading && selectedClasseId > 0);
 
   return (
@@ -230,6 +283,18 @@ export default function EmploiDuTempsPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1.5"
+            onClick={() => {
+              setGenerateDialogOpen(true);
+              setGenerateResult(null);
+            }}
+          >
+            <Wand2 className="h-4 w-4" />
+            Generer automatiquement
+          </Button>
           <Button
             variant="outline"
             size="sm"
@@ -609,6 +674,231 @@ export default function EmploiDuTempsPage() {
                 : "Creer"}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Auto-Generation Dialog */}
+      <Dialog open={generateDialogOpen} onOpenChange={handleCloseGenerateDialog}>
+        <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Wand2 className="h-5 w-5" />
+              Generation automatique de l'emploi du temps
+            </DialogTitle>
+            <DialogDescription>
+              Definissez les affectations (classe + module + enseignant + heures/semaine) et selectionnez les salles disponibles.
+            </DialogDescription>
+          </DialogHeader>
+
+          {generateResult ? (
+            // --- Result view ---
+            <div className="space-y-4 py-2">
+              <div className={`rounded-lg border p-4 ${
+                generateResult.status === "SOLVED"
+                  ? "border-green-200 bg-green-50"
+                  : "border-orange-200 bg-orange-50"
+              }`}>
+                <div className="flex items-center gap-2 font-medium">
+                  {generateResult.status === "SOLVED" ? (
+                    <CheckCircle2 className="h-5 w-5 text-green-600" />
+                  ) : (
+                    <AlertTriangle className="h-5 w-5 text-orange-600" />
+                  )}
+                  <span className={generateResult.status === "SOLVED" ? "text-green-700" : "text-orange-700"}>
+                    {generateResult.status === "SOLVED"
+                      ? "Emploi du temps genere avec succes"
+                      : "Generation terminee avec des conflits"}
+                  </span>
+                </div>
+                <p className="text-sm mt-1 opacity-70">
+                  Score: {generateResult.score} | {generateResult.entries.length} cours places
+                </p>
+              </div>
+              {generateResult.unresolvedConflicts.length > 0 && (
+                <div className="rounded-lg border border-orange-200 bg-orange-50 p-3">
+                  <p className="text-sm font-medium text-orange-700 mb-1">Conflits non resolus:</p>
+                  <ul className="text-xs text-orange-600 list-disc pl-4 space-y-0.5">
+                    {generateResult.unresolvedConflicts.map((c, i) => (
+                      <li key={i}>{c}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              <DialogFooter>
+                <Button variant="outline" onClick={handleCloseGenerateDialog}>
+                  Fermer
+                </Button>
+              </DialogFooter>
+            </div>
+          ) : (
+            // --- Input form ---
+            <div className="space-y-5 py-2">
+              {/* Add assignment form */}
+              <div className="space-y-3">
+                <Label className="text-sm font-semibold">Ajouter une affectation</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">Classe</Label>
+                    <Select
+                      value={newAssignment.classeId ? String(newAssignment.classeId) : ""}
+                      onValueChange={(v) => setNewAssignment({ ...newAssignment, classeId: Number(v) })}
+                    >
+                      <SelectTrigger className="h-9 text-xs">
+                        <SelectValue placeholder="Classe" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {classes.map((c) => (
+                          <SelectItem key={c.id} value={String(c.id)}>{c.fullName}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">Module</Label>
+                    <Select
+                      value={newAssignment.moduleId ? String(newAssignment.moduleId) : ""}
+                      onValueChange={(v) => setNewAssignment({ ...newAssignment, moduleId: Number(v) })}
+                    >
+                      <SelectTrigger className="h-9 text-xs">
+                        <SelectValue placeholder="Module" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {modules.map((m) => (
+                          <SelectItem key={m.id} value={String(m.id)}>{m.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">Enseignant</Label>
+                    <Select
+                      value={newAssignment.enseignantId ? String(newAssignment.enseignantId) : ""}
+                      onValueChange={(v) => setNewAssignment({ ...newAssignment, enseignantId: Number(v) })}
+                    >
+                      <SelectTrigger className="h-9 text-xs">
+                        <SelectValue placeholder="Enseignant" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {teachers.map((t) => (
+                          <SelectItem key={t.id} value={String(t.id)}>
+                            {t.prenom} {t.nom}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">Heures/semaine</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        type="number"
+                        min={1}
+                        max={20}
+                        className="h-9 text-xs"
+                        value={newAssignment.nbHeures}
+                        onChange={(e) => setNewAssignment({ ...newAssignment, nbHeures: Number(e.target.value) })}
+                      />
+                      <Button size="sm" className="h-9 px-3" onClick={handleAddAssignment}
+                        disabled={!newAssignment.classeId || !newAssignment.moduleId || !newAssignment.enseignantId}>
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Assignment list */}
+              {assignments.length > 0 && (
+                <div className="space-y-2">
+                  <Label className="text-sm font-semibold">
+                    Affectations ({assignments.length})
+                  </Label>
+                  <div className="max-h-40 overflow-y-auto space-y-1.5">
+                    {assignments.map((a, i) => (
+                      <div key={i} className="flex items-center justify-between rounded-lg border border-border/50 bg-muted/20 px-3 py-2 text-xs">
+                        <div className="flex items-center gap-3">
+                          <Badge variant="outline" className="text-[10px]">
+                            {classes.find((c) => c.id === a.classeId)?.fullName ?? `Classe ${a.classeId}`}
+                          </Badge>
+                          <span className="font-medium">
+                            {modules.find((m) => m.id === a.moduleId)?.name ?? `Module ${a.moduleId}`}
+                          </span>
+                          <span className="text-muted-foreground">
+                            {teachers.find((t) => t.id === a.enseignantId)
+                              ? `${teachers.find((t) => t.id === a.enseignantId)!.prenom} ${teachers.find((t) => t.id === a.enseignantId)!.nom}`
+                              : `Prof ${a.enseignantId}`}
+                          </span>
+                          <Badge className="text-[10px]">{a.nbHeures}h/sem</Badge>
+                        </div>
+                        <button onClick={() => handleRemoveAssignment(i)} className="text-muted-foreground hover:text-destructive">
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Room selection */}
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold">
+                  Salles disponibles ({selectedRooms.length} selectionnees)
+                </Label>
+                <div className="grid grid-cols-3 gap-1.5 max-h-32 overflow-y-auto">
+                  {availableRooms.map((room) => (
+                    <button
+                      key={room.id}
+                      onClick={() => handleToggleRoom(room.nom)}
+                      className={`rounded-md border px-2 py-1.5 text-xs text-left transition-colors ${
+                        selectedRooms.includes(room.nom)
+                          ? "border-primary bg-primary/10 text-primary font-medium"
+                          : "border-border/50 hover:border-primary/40"
+                      }`}
+                    >
+                      {room.nom}
+                      <span className="block text-[10px] text-muted-foreground">{room.type}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Timeout */}
+              <div className="flex items-center gap-3">
+                <Label className="text-sm whitespace-nowrap">Timeout (secondes):</Label>
+                <Input
+                  type="number"
+                  min={5}
+                  max={120}
+                  className="w-24 h-9 text-xs"
+                  value={solverTimeout}
+                  onChange={(e) => setSolverTimeout(Number(e.target.value))}
+                />
+              </div>
+
+              <DialogFooter>
+                <DialogClose asChild>
+                  <Button variant="outline">Annuler</Button>
+                </DialogClose>
+                <Button
+                  onClick={handleGenerate}
+                  disabled={generateMutation.isPending || assignments.length === 0 || selectedRooms.length === 0}
+                  className="gap-1.5 bg-gradient-primary shadow-btn"
+                >
+                  {generateMutation.isPending ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Resolution en cours...
+                    </>
+                  ) : (
+                    <>
+                      <Wand2 className="h-4 w-4" />
+                      Generer
+                    </>
+                  )}
+                </Button>
+              </DialogFooter>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>

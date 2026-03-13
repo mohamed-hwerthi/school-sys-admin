@@ -19,7 +19,7 @@ import {
   File,
   Printer,
 } from "lucide-react";
-import { toast } from "sonner";
+import { notify } from "@/lib/toast";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -119,7 +119,7 @@ export default function Rapports() {
   const handleDelete = () => {
     if (!deleteTarget) return;
     setRapports((prev) => prev.filter((r) => r.id !== deleteTarget.id));
-    toast.success("Rapport supprimé");
+    notify.success("Rapport supprimé");
     setDeleteTarget(null);
   };
 
@@ -143,7 +143,7 @@ export default function Rapports() {
             <Download className="h-4 w-4" />
             Exporter tout
           </Button>
-          <Button size="sm" className="gap-1.5 bg-gradient-primary shadow-btn" onClick={() => toast.info("Génération de rapport à venir")}>
+          <Button size="sm" className="gap-1.5 bg-gradient-primary shadow-btn" onClick={() => notify.info("Génération de rapport à venir")}>
             <Plus className="h-4 w-4" />
             Nouveau rapport
           </Button>
@@ -251,11 +251,11 @@ export default function Rapports() {
                   <Eye className="h-3.5 w-3.5" />Voir
                 </Button>
                 {r.fichier && (
-                  <Button variant="ghost" size="sm" className="gap-1 text-xs" onClick={() => toast.success("Téléchargement simulé")}>
+                  <Button variant="ghost" size="sm" className="gap-1 text-xs" onClick={() => notify.success("Téléchargement simulé")}>
                     <FileDown className="h-3.5 w-3.5" />Télécharger
                   </Button>
                 )}
-                <Button variant="ghost" size="sm" className="gap-1 text-xs" onClick={() => toast.success("Impression simulée")}>
+                <Button variant="ghost" size="sm" className="gap-1 text-xs" onClick={() => notify.success("Impression simulée")}>
                   <Printer className="h-3.5 w-3.5" />Imprimer
                 </Button>
                 <Button variant="ghost" size="icon" className="h-7 w-7 ml-auto text-muted-foreground hover:text-red-600" onClick={() => setDeleteTarget(r)}>

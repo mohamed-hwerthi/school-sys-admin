@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { caisseApi, CaisseRequest, MouvementRequest } from "@/api/caisse.api";
-import { useToast } from "@/hooks/use-toast";
+import { notify } from "@/lib/toast";
 
 const KEYS = {
   all: (annee: string) => ["caisse", annee] as const,
@@ -32,52 +32,48 @@ export function useMouvements(caisseId: number) {
 
 export function useOuvrirCaisse() {
   const qc = useQueryClient();
-  const { toast } = useToast();
   return useMutation({
     mutationFn: (data: CaisseRequest) => caisseApi.ouvrir(data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["caisse"] });
-      toast({ title: "Caisse ouverte avec succes" });
+      notify.success("Caisse ouverte avec succes");
     },
-    onError: (err: any) => toast({ title: err?.response?.data?.message || "Erreur", variant: "destructive" }),
+    onError: (err: any) => notify.error(err?.response?.data?.message || "Erreur"),
   });
 }
 
 export function useFermerCaisse() {
   const qc = useQueryClient();
-  const { toast } = useToast();
   return useMutation({
     mutationFn: ({ id, fermePar }: { id: number; fermePar?: string }) => caisseApi.fermer(id, fermePar),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["caisse"] });
-      toast({ title: "Caisse fermee avec succes" });
+      notify.success("Caisse fermee avec succes");
     },
-    onError: (err: any) => toast({ title: err?.response?.data?.message || "Erreur", variant: "destructive" }),
+    onError: (err: any) => notify.error(err?.response?.data?.message || "Erreur"),
   });
 }
 
 export function useAddMouvement() {
   const qc = useQueryClient();
-  const { toast } = useToast();
   return useMutation({
     mutationFn: (data: MouvementRequest) => caisseApi.addMouvement(data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["caisse"] });
-      toast({ title: "Mouvement ajoute" });
+      notify.success("Mouvement ajoute");
     },
-    onError: (err: any) => toast({ title: err?.response?.data?.message || "Erreur", variant: "destructive" }),
+    onError: (err: any) => notify.error(err?.response?.data?.message || "Erreur"),
   });
 }
 
 export function useDeleteMouvement() {
   const qc = useQueryClient();
-  const { toast } = useToast();
   return useMutation({
     mutationFn: (id: number) => caisseApi.deleteMouvement(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["caisse"] });
-      toast({ title: "Mouvement supprime" });
+      notify.success("Mouvement supprime");
     },
-    onError: (err: any) => toast({ title: err?.response?.data?.message || "Erreur", variant: "destructive" }),
+    onError: (err: any) => notify.error(err?.response?.data?.message || "Erreur"),
   });
 }

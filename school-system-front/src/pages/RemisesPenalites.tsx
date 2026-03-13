@@ -13,7 +13,7 @@ import {
   Percent,
   Ban,
 } from "lucide-react";
-import { toast } from "sonner";
+import { notify } from "@/lib/toast";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -144,21 +144,21 @@ export default function RemisesPenalites() {
 
   const handleSaveRemise = () => {
     if (!remiseForm.studentId || !remiseForm.valeur) {
-      toast.error("Veuillez remplir les champs obligatoires");
+      notify.error("Veuillez remplir les champs obligatoires");
       return;
     }
     if (editRemise) {
       updateRemise.mutate(
         { id: editRemise.id, data: remiseForm },
         {
-          onSuccess: () => { toast.success("Remise modifiee"); setRemiseDialogOpen(false); setEditRemise(null); },
-          onError: (err) => toast.error(err.message),
+          onSuccess: () => { notify.success("Remise modifiee"); setRemiseDialogOpen(false); setEditRemise(null); },
+          onError: (err) => notify.error(err.message),
         }
       );
     } else {
       createRemise.mutate(remiseForm, {
-        onSuccess: () => { toast.success("Remise ajoutee"); setRemiseDialogOpen(false); },
-        onError: (err) => toast.error(err.message),
+        onSuccess: () => { notify.success("Remise ajoutee"); setRemiseDialogOpen(false); },
+        onError: (err) => notify.error(err.message),
       });
     }
   };
@@ -166,8 +166,8 @@ export default function RemisesPenalites() {
   const handleDeleteRemise = () => {
     if (!deleteRemiseTarget) return;
     deleteRemiseMut.mutate(deleteRemiseTarget.id, {
-      onSuccess: () => { toast.success("Remise supprimee"); setDeleteRemiseTarget(null); },
-      onError: (err) => toast.error(err.message),
+      onSuccess: () => { notify.success("Remise supprimee"); setDeleteRemiseTarget(null); },
+      onError: (err) => notify.error(err.message),
     });
   };
 
@@ -209,21 +209,21 @@ export default function RemisesPenalites() {
 
   const handleSavePenalite = () => {
     if (!penaliteForm.studentId || !penaliteForm.montant || !penaliteForm.motif) {
-      toast.error("Veuillez remplir les champs obligatoires");
+      notify.error("Veuillez remplir les champs obligatoires");
       return;
     }
     if (editPenalite) {
       updatePenalite.mutate(
         { id: editPenalite.id, data: penaliteForm },
         {
-          onSuccess: () => { toast.success("Penalite modifiee"); setPenaliteDialogOpen(false); setEditPenalite(null); },
-          onError: (err) => toast.error(err.message),
+          onSuccess: () => { notify.success("Penalite modifiee"); setPenaliteDialogOpen(false); setEditPenalite(null); },
+          onError: (err) => notify.error(err.message),
         }
       );
     } else {
       createPenalite.mutate(penaliteForm, {
-        onSuccess: () => { toast.success("Penalite ajoutee"); setPenaliteDialogOpen(false); },
-        onError: (err) => toast.error(err.message),
+        onSuccess: () => { notify.success("Penalite ajoutee"); setPenaliteDialogOpen(false); },
+        onError: (err) => notify.error(err.message),
       });
     }
   };
@@ -231,8 +231,8 @@ export default function RemisesPenalites() {
   const handleDeletePenalite = () => {
     if (!deletePenaliteTarget) return;
     deletePenaliteMut.mutate(deletePenaliteTarget.id, {
-      onSuccess: () => { toast.success("Penalite supprimee"); setDeletePenaliteTarget(null); },
-      onError: (err) => toast.error(err.message),
+      onSuccess: () => { notify.success("Penalite supprimee"); setDeletePenaliteTarget(null); },
+      onError: (err) => notify.error(err.message),
     });
   };
 
@@ -432,7 +432,7 @@ export default function RemisesPenalites() {
                       <td className="py-3 px-4 text-center">
                         <button
                           onClick={() => togglePayee.mutate(p.id, {
-                            onSuccess: () => toast.success(p.payee ? "Marquee comme impayee" : "Marquee comme payee"),
+                            onSuccess: () => notify.success(p.payee ? "Marquee comme impayee" : "Marquee comme payee"),
                           })}
                           className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors cursor-pointer ${
                             p.payee

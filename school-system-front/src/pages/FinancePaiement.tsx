@@ -39,7 +39,7 @@ import {
   Cell,
   Legend,
 } from "recharts";
-import { toast } from "sonner";
+import { notify } from "@/lib/toast";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -142,7 +142,7 @@ export default function FinancePaiement() {
       statut: p.statut,
     };
     generateRecuPDF(recuData, school);
-    toast.success("Recu PDF telecharge");
+    notify.success("Recu PDF telecharge");
   };
   const loading = loadingTypesFrais || loadingPaiements;
 
@@ -299,10 +299,10 @@ export default function FinancePaiement() {
       },
       {
         onSuccess: () => {
-          toast.success("Paiement ajouté");
+          notify.success("Paiement ajouté");
           setAddDialogOpen(false);
         },
-        onError: (err) => toast.error(err.message),
+        onError: (err) => notify.error(err.message),
       }
     );
   };
@@ -327,10 +327,10 @@ export default function FinancePaiement() {
       },
       {
         onSuccess: () => {
-          toast.success("Paiement modifié");
+          notify.success("Paiement modifié");
           setEditPaiement(null);
         },
-        onError: (err) => toast.error(err.message),
+        onError: (err) => notify.error(err.message),
       }
     );
   };
@@ -339,10 +339,10 @@ export default function FinancePaiement() {
     if (!deletePaiementTarget) return;
     deletePaiementMutation.mutate(deletePaiementTarget.id, {
       onSuccess: () => {
-        toast.success("Paiement supprimé");
+        notify.success("Paiement supprimé");
         setDeletePaiementTarget(null);
       },
-      onError: (err) => toast.error(err.message),
+      onError: (err) => notify.error(err.message),
     });
   };
 
@@ -361,12 +361,12 @@ export default function FinancePaiement() {
   };
 
   const handleBulkSMS = () => {
-    toast.success(`SMS envoyé à ${selectedRelanceIds.length} parent(s) (simulation)`);
+    notify.success(`SMS envoyé à ${selectedRelanceIds.length} parent(s) (simulation)`);
     setSelectedRelanceIds([]);
   };
 
   const handleBulkEmail = () => {
-    toast.success(`Email envoyé à ${selectedRelanceIds.length} parent(s) (simulation)`);
+    notify.success(`Email envoyé à ${selectedRelanceIds.length} parent(s) (simulation)`);
     setSelectedRelanceIds([]);
   };
 

@@ -18,7 +18,7 @@ import {
   Users,
   BookOpen,
 } from "lucide-react";
-import { toast } from "sonner";
+import { notify } from "@/lib/toast";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -122,14 +122,14 @@ export default function Configuration() {
         directeurNameAr: directeurNameAr || null,
       },
       {
-        onSuccess: () => toast.success("Configuration sauvegardée avec succès"),
-        onError: () => toast.error("Erreur lors de la sauvegarde"),
+        onSuccess: () => notify.success("Configuration sauvegardée avec succès"),
+        onError: () => notify.error("Erreur lors de la sauvegarde"),
       }
     );
   };
 
   const handleReset = () => {
-    toast.info("Configuration réinitialisée aux valeurs par défaut");
+    notify.info("Configuration réinitialisée aux valeurs par défaut");
   };
 
   if (loading) return <DashboardSkeleton />;
@@ -475,11 +475,11 @@ export default function Configuration() {
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  <Button variant="outline" size="sm" className="gap-1.5" onClick={() => toast.success("Sauvegarde manuelle lancée (simulation)")}>
+                  <Button variant="outline" size="sm" className="gap-1.5" onClick={() => notify.success("Sauvegarde manuelle lancée (simulation)")}>
                     <Database className="h-4 w-4" />
                     Sauvegarder maintenant
                   </Button>
-                  <Button variant="outline" size="sm" className="gap-1.5" onClick={() => toast.info("Restauration à venir")}>
+                  <Button variant="outline" size="sm" className="gap-1.5" onClick={() => notify.info("Restauration à venir")}>
                     <RotateCcw className="h-4 w-4" />
                     Restaurer
                   </Button>

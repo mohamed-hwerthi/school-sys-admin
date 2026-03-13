@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { relancesApi, RelanceRequest, TypeRelance } from "@/api/relances.api";
-import { useToast } from "@/hooks/use-toast";
+import { notify } from "@/lib/toast";
 
 const KEYS = {
   all: (annee: string) => ["relances", annee] as const,
@@ -40,65 +40,60 @@ export function useRelanceStats(anneeScolaire = "2025-2026") {
 
 export function useCreateRelance(anneeScolaire = "2025-2026") {
   const qc = useQueryClient();
-  const { toast } = useToast();
   return useMutation({
     mutationFn: (data: RelanceRequest) => relancesApi.create(data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["relances"] });
-      toast({ title: "Relance creee avec succes" });
+      notify.success("Relance creee avec succes");
     },
-    onError: () => toast({ title: "Erreur lors de la creation", variant: "destructive" }),
+    onError: () => notify.error("Erreur lors de la creation"),
   });
 }
 
 export function useGenerateRelances(anneeScolaire = "2025-2026") {
   const qc = useQueryClient();
-  const { toast } = useToast();
   return useMutation({
     mutationFn: (type: TypeRelance) => relancesApi.generate(anneeScolaire, type),
     onSuccess: (data) => {
       qc.invalidateQueries({ queryKey: ["relances"] });
-      toast({ title: `${data.length} relance(s) generee(s)` });
+      notify.success(`${data.length} relance(s) generee(s)`);
     },
-    onError: () => toast({ title: "Erreur lors de la generation", variant: "destructive" }),
+    onError: () => notify.error("Erreur lors de la generation"),
   });
 }
 
 export function useMarkRelanceEnvoyee() {
   const qc = useQueryClient();
-  const { toast } = useToast();
   return useMutation({
     mutationFn: (id: number) => relancesApi.markEnvoyee(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["relances"] });
-      toast({ title: "Relance marquee comme envoyee" });
+      notify.success("Relance marquee comme envoyee");
     },
-    onError: () => toast({ title: "Erreur", variant: "destructive" }),
+    onError: () => notify.error("Erreur"),
   });
 }
 
 export function useMarkRelanceEchouee() {
   const qc = useQueryClient();
-  const { toast } = useToast();
   return useMutation({
     mutationFn: (id: number) => relancesApi.markEchouee(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["relances"] });
-      toast({ title: "Relance marquee comme echouee" });
+      notify.success("Relance marquee comme echouee");
     },
-    onError: () => toast({ title: "Erreur", variant: "destructive" }),
+    onError: () => notify.error("Erreur"),
   });
 }
 
 export function useDeleteRelance() {
   const qc = useQueryClient();
-  const { toast } = useToast();
   return useMutation({
     mutationFn: (id: number) => relancesApi.delete(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["relances"] });
-      toast({ title: "Relance supprimee" });
+      notify.success("Relance supprimee");
     },
-    onError: () => toast({ title: "Erreur lors de la suppression", variant: "destructive" }),
+    onError: () => notify.error("Erreur lors de la suppression"),
   });
 }

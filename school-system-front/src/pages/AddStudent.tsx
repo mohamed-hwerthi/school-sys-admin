@@ -4,7 +4,7 @@ import { ChevronRight, UserPlus } from "lucide-react";
 import { useCreateStudent } from "@/hooks/useStudents";
 import { StudentForm } from "@/components/students/StudentForm";
 import type { StudentFormValues } from "@/lib/student-schema";
-import { toast } from "sonner";
+import { notify } from "@/lib/toast";
 
 export default function AddStudent() {
   const navigate = useNavigate();
@@ -26,15 +26,12 @@ export default function AddStudent() {
         emailParent: data.emailParent ?? "",
         notes: data.notes ?? "",
       },
-      {
-        onSuccess: () => {
-          toast.success("Élève inscrit avec succès");
-          navigate("/dashboard/eleves");
-        },
-        onError: (err) => {
-          toast.error(err.message || "Erreur lors de l'inscription");
-        },
-      }
+      notify.mutation({
+        success: "Eleve inscrit avec succes",
+        successDescription: `${data.prenom} ${data.nom} a ete ajoute`,
+        error: "Erreur lors de l'inscription",
+        onSuccess: () => navigate("/dashboard/eleves"),
+      })
     );
   };
 

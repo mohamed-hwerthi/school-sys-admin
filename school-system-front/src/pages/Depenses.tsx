@@ -24,7 +24,7 @@ import {
   ResponsiveContainer,
   Cell,
 } from "recharts";
-import { toast } from "sonner";
+import { notify } from "@/lib/toast";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -174,15 +174,15 @@ export default function Depenses() {
 
   const handleCreate = () => {
     if (!form.categorieId || !form.libelle || !form.montant) {
-      toast.error("Veuillez remplir les champs obligatoires");
+      notify.error("Veuillez remplir les champs obligatoires");
       return;
     }
     createDepense.mutate(form, {
       onSuccess: () => {
-        toast.success("Depense ajoutee");
+        notify.success("Depense ajoutee");
         setAddDialogOpen(false);
       },
-      onError: (err) => toast.error(err.message),
+      onError: (err) => notify.error(err.message),
     });
   };
 
@@ -192,10 +192,10 @@ export default function Depenses() {
       { id: editDepense.id, data: form },
       {
         onSuccess: () => {
-          toast.success("Depense modifiee");
+          notify.success("Depense modifiee");
           setEditDepense(null);
         },
-        onError: (err) => toast.error(err.message),
+        onError: (err) => notify.error(err.message),
       }
     );
   };
@@ -204,10 +204,10 @@ export default function Depenses() {
     if (!deleteTarget) return;
     deleteDepenseMutation.mutate(deleteTarget.id, {
       onSuccess: () => {
-        toast.success("Depense supprimee");
+        notify.success("Depense supprimee");
         setDeleteTarget(null);
       },
-      onError: (err) => toast.error(err.message),
+      onError: (err) => notify.error(err.message),
     });
   };
 
