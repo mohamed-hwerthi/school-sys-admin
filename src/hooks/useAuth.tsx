@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react";
 import { authApi } from "@/api/auth.api";
 import type { AuthUser, LoginRequest, LoginResponse } from "@/types/auth";
-import { toast } from "sonner";
+import { notify } from "@/lib/toast";
 
 interface TwoFactorPending {
   userId: number;
@@ -103,7 +103,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     }
     clearAuth();
-    toast.success("Vous avez été déconnecté");
+    notify.info("Vous avez ete deconnecte");
   }, [clearAuth]);
 
   return (

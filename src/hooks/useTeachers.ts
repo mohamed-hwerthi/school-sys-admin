@@ -15,7 +15,7 @@ import type { Teacher } from "@/types/teacher";
 import { MOCK_TEACHERS } from "@/data/teachers";
 import { teachersApi } from "@/api/teachers.api";
 import env from "@/config/env";
-import { toast } from "sonner";
+import { notify } from "@/lib/toast";
 
 const QUERY_KEY = ["teachers"];
 
@@ -109,9 +109,9 @@ function ApiTeachersProvider({ children }: { children: ReactNode }) {
     mutationFn: teachersApi.create,
     onSuccess: () => {
       invalidate();
-      toast.success("Enseignant ajouté");
+      notify.success("Enseignant ajouté");
     },
-    onError: (err: Error) => toast.error(err.message),
+    onError: (err: Error) => notify.error(err.message),
   });
 
   const updateMutation = useMutation({
@@ -119,27 +119,27 @@ function ApiTeachersProvider({ children }: { children: ReactNode }) {
       teachersApi.update(id, data),
     onSuccess: () => {
       invalidate();
-      toast.success("Enseignant modifié");
+      notify.success("Enseignant modifié");
     },
-    onError: (err: Error) => toast.error(err.message),
+    onError: (err: Error) => notify.error(err.message),
   });
 
   const deleteMutation = useMutation({
     mutationFn: teachersApi.delete,
     onSuccess: () => {
       invalidate();
-      toast.success("Enseignant supprimé");
+      notify.success("Enseignant supprimé");
     },
-    onError: (err: Error) => toast.error(err.message),
+    onError: (err: Error) => notify.error(err.message),
   });
 
   const importMutation = useMutation({
     mutationFn: teachersApi.importBulk,
     onSuccess: (result) => {
       invalidate();
-      toast.success(`${result.length} enseignant(s) importé(s)`);
+      notify.success(`${result.length} enseignant(s) importé(s)`);
     },
-    onError: (err: Error) => toast.error(err.message),
+    onError: (err: Error) => notify.error(err.message),
   });
 
   const addTeacher = useCallback(

@@ -5,7 +5,7 @@ import { useStudent, useUpdateStudent } from "@/hooks/useStudents";
 import { StudentForm } from "@/components/students/StudentForm";
 import { StudentFormSkeleton } from "@/components/skeletons/StudentFormSkeleton";
 import type { StudentFormValues } from "@/lib/student-schema";
-import { toast } from "sonner";
+import { notify } from "@/lib/toast";
 
 export default function EditStudent() {
   const { id } = useParams<{ id: string }>();
@@ -35,15 +35,12 @@ export default function EditStudent() {
   const handleSubmit = (data: StudentFormValues) => {
     updateStudent.mutate(
       { id: student.id, data },
-      {
-        onSuccess: () => {
-          toast.success("Élève modifié avec succès");
-          navigate("/dashboard/eleves");
-        },
-        onError: (err) => {
-          toast.error(err.message || "Erreur lors de la modification");
-        },
-      }
+      notify.mutation({
+        success: "Eleve modifie avec succes",
+        successDescription: `${data.prenom} ${data.nom} a ete mis a jour`,
+        error: "Erreur lors de la modification",
+        onSuccess: () => navigate("/dashboard/eleves"),
+      })
     );
   };
 

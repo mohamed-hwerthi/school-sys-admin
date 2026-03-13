@@ -17,7 +17,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { toast } from "sonner";
+import { notify } from "@/lib/toast";
 import { useClasses } from "@/hooks/useClasses";
 import { useNiveaux } from "@/hooks/useNiveaux";
 import { bulletinsApi, type BulletinDTO } from "@/api/bulletins.api";
@@ -36,7 +36,7 @@ export default function BulletinsMasse() {
 
   const handleGenerate = async () => {
     if (!selectedClasse || !selectedTrimestre) {
-      toast.error("Veuillez selectionner une classe et un trimestre");
+      notify.error("Veuillez selectionner une classe et un trimestre");
       return;
     }
     setGenerating(true);
@@ -47,9 +47,9 @@ export default function BulletinsMasse() {
       );
       setBulletins(data);
       setGenerated(true);
-      toast.success(`${data.length} bulletins generes`);
+      notify.success(`${data.length} bulletins generes`);
     } catch {
-      toast.error("Erreur lors de la generation");
+      notify.error("Erreur lors de la generation");
     } finally {
       setGenerating(false);
     }
@@ -69,7 +69,7 @@ export default function BulletinsMasse() {
     a.download = `bulletins_T${selectedTrimestre}.txt`;
     a.click();
     URL.revokeObjectURL(url);
-    toast.success("Fichier telecharge");
+    notify.success("Fichier telecharge");
   };
 
   const classeObj = classes.find((c) => c.id === selectedClasse);

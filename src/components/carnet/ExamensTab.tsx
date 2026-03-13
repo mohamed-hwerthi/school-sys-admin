@@ -8,7 +8,7 @@ import {
   GraduationCap,
   Search,
 } from "lucide-react";
-import { toast } from "sonner";
+import { notify } from "@/lib/toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -154,15 +154,15 @@ export default function ExamensTab() {
 
   const handleSave = () => {
     if (!form.name.trim()) {
-      toast.error("Le nom de l'examen est obligatoire");
+      notify.error("Le nom de l'examen est obligatoire");
       return;
     }
     if (!form.classeId) {
-      toast.error("La classe est obligatoire");
+      notify.error("La classe est obligatoire");
       return;
     }
     if (!form.moduleId) {
-      toast.error("Le module est obligatoire");
+      notify.error("Le module est obligatoire");
       return;
     }
     if (editId) {
@@ -170,19 +170,19 @@ export default function ExamensTab() {
         { id: editId, data: form },
         {
           onSuccess: () => {
-            toast.success("Examen modifié");
+            notify.success("Examen modifié");
             setShowDialog(false);
           },
-          onError: () => toast.error("Erreur lors de la modification"),
+          onError: () => notify.error("Erreur lors de la modification"),
         }
       );
     } else {
       createExamen.mutate(form, {
         onSuccess: () => {
-          toast.success("Examen créé");
+          notify.success("Examen créé");
           setShowDialog(false);
         },
-        onError: () => toast.error("Erreur lors de la création"),
+        onError: () => notify.error("Erreur lors de la création"),
       });
     }
   };
@@ -191,10 +191,10 @@ export default function ExamensTab() {
     if (!deleteTarget) return;
     deleteExamen.mutate(deleteTarget.id, {
       onSuccess: () => {
-        toast.success("Examen supprimé");
+        notify.success("Examen supprimé");
         setDeleteTarget(null);
       },
-      onError: () => toast.error("Erreur lors de la suppression"),
+      onError: () => notify.error("Erreur lors de la suppression"),
     });
   };
 
@@ -202,10 +202,10 @@ export default function ExamensTab() {
     if (selectedIds.size === 0) return;
     deleteBulk.mutate(Array.from(selectedIds), {
       onSuccess: () => {
-        toast.success(`${selectedIds.size} examen(s) supprimé(s)`);
+        notify.success(`${selectedIds.size} examen(s) supprimé(s)`);
         setSelectedIds(new Set());
       },
-      onError: () => toast.error("Erreur lors de la suppression"),
+      onError: () => notify.error("Erreur lors de la suppression"),
     });
   };
 

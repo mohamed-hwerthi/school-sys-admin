@@ -16,7 +16,7 @@ import {
   TrendingUp,
   ListOrdered,
 } from "lucide-react";
-import { toast } from "sonner";
+import { notify } from "@/lib/toast";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -162,12 +162,12 @@ export default function InscriptionsPage() {
       },
       {
         onSuccess: () => {
-          toast.success("Statut mis a jour avec succes");
+          notify.success("Statut mis a jour avec succes");
           setChangeStatutOpen(false);
           setSelectedInscription(null);
         },
         onError: (error) => {
-          toast.error(
+          notify.error(
             error instanceof Error ? error.message : "Erreur lors de la mise a jour"
           );
         },

@@ -33,7 +33,7 @@ import {
   Pie,
   Cell,
 } from "recharts";
-import { toast } from "sonner";
+import { notify } from "@/lib/toast";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -176,7 +176,7 @@ export default function Evaluations() {
   const handleDelete = () => {
     if (!deleteTarget) return;
     setEvaluations((prev) => prev.filter((e) => e.id !== deleteTarget.id));
-    toast.success("Évaluation supprimée");
+    notify.success("Évaluation supprimée");
     setDeleteTarget(null);
   };
 
@@ -210,7 +210,7 @@ export default function Evaluations() {
             <Download className="h-4 w-4" />
             Exporter
           </Button>
-          <Button size="sm" className="gap-1.5 bg-gradient-primary shadow-btn" onClick={() => toast.info("Fonctionnalité de création à venir")}>
+          <Button size="sm" className="gap-1.5 bg-gradient-primary shadow-btn" onClick={() => notify.info("Fonctionnalité de création à venir")}>
             <Plus className="h-4 w-4" />
             Nouvelle évaluation
           </Button>
@@ -384,7 +384,7 @@ export default function Evaluations() {
                       <td className="py-3 px-4 text-right">
                         <div className="flex items-center justify-end gap-1">
                           <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-blue-600" onClick={() => setViewEval(e)}><Eye className="h-4 w-4" /></Button>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-amber-600" onClick={() => toast.info("Modification à venir")}><Edit className="h-4 w-4" /></Button>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-amber-600" onClick={() => notify.info("Modification à venir")}><Edit className="h-4 w-4" /></Button>
                           <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-red-600" onClick={() => setDeleteTarget(e)}><Trash2 className="h-4 w-4" /></Button>
                         </div>
                       </td>

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { toast } from "sonner";
+import { notify } from "@/lib/toast";
 import type { Student } from "@/types/student";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -27,7 +27,7 @@ export function AppelDialog({ open, onOpenChange, student }: AppelDialogProps) {
   const handleSave = () => {
     if (!student) return;
     // TODO: integrate with backend Communication API when available
-    toast.success("Appel enregistré", {
+    notify.success("Appel enregistré", {
       description: `Appel enregistré pour ${student.prenom} ${student.nom}`,
     });
     setNotes("");

@@ -31,7 +31,7 @@ import {
   useDeleteNotification,
 } from "@/hooks/useNotifications";
 import type { Notification, NotificationType } from "@/types/notification";
-import { toast } from "sonner";
+import { notify } from "@/lib/toast";
 
 const TYPE_ICONS: Record<NotificationType, React.ElementType> = {
   INFO: Info,
@@ -106,21 +106,21 @@ export default function NotificationsPage() {
 
   const handleMarkAsRead = (id: number) => {
     markAsRead.mutate(id, {
-      onError: () => toast.error("Erreur lors du marquage"),
+      onError: () => notify.error("Erreur lors du marquage"),
     });
   };
 
   const handleMarkAllAsRead = () => {
     markAllAsRead.mutate(undefined, {
-      onSuccess: () => toast.success("Toutes les notifications sont lues"),
-      onError: () => toast.error("Erreur"),
+      onSuccess: () => notify.success("Toutes les notifications sont lues"),
+      onError: () => notify.error("Erreur"),
     });
   };
 
   const handleDelete = (id: number) => {
     deleteNotification.mutate(id, {
-      onSuccess: () => toast.success("Notification supprimee"),
-      onError: () => toast.error("Erreur lors de la suppression"),
+      onSuccess: () => notify.success("Notification supprimee"),
+      onError: () => notify.error("Erreur lors de la suppression"),
     });
   };
 

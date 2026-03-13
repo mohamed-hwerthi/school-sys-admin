@@ -10,7 +10,7 @@ import {
   ArrowUpDown,
   Eye,
 } from "lucide-react";
-import { toast } from "sonner";
+import { notify } from "@/lib/toast";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -70,11 +70,11 @@ export default function SuperAdminDashboard() {
   const handleToggleActive = (tenant: TenantResponse) => {
     if (tenant.active) {
       deactivate.mutate(tenant.id, {
-        onSuccess: () => toast.success(`${tenant.name} desactive`),
+        onSuccess: () => notify.success(`${tenant.name} desactive`),
       });
     } else {
       activate.mutate(tenant.id, {
-        onSuccess: () => toast.success(`${tenant.name} active`),
+        onSuccess: () => notify.success(`${tenant.name} active`),
       });
     }
   };
@@ -85,7 +85,7 @@ export default function SuperAdminDashboard() {
       { id: planDialog.id, plan: selectedPlan },
       {
         onSuccess: () => {
-          toast.success(`Forfait mis a jour pour ${planDialog.name}`);
+          notify.success(`Forfait mis a jour pour ${planDialog.name}`);
           setPlanDialog(null);
         },
       }

@@ -1,7 +1,7 @@
 import { lazy, Suspense } from "react";
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
+import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "@/config/queryClient";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
@@ -117,11 +117,17 @@ const PageLoader = () => (
   </div>
 );
 
+const S = ({ children }: { children: React.ReactNode }) => (
+  <ErrorBoundary>
+    <Suspense fallback={<PageLoader />}>{children}</Suspense>
+  </ErrorBoundary>
+);
+
 const App = () => (
+  <ErrorBoundary>
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
-      <Sonner />
       <BrowserRouter>
         <AuthProvider>
           <Routes>
@@ -152,107 +158,105 @@ const App = () => (
                 </PrivateRoute>
               }
             >
-              <Suspense fallback={<PageLoader />}>
-                <Route index element={<Dashboard />} />
+              <Route index element={<S><Dashboard /></S>} />
 
-                {/* Élèves */}
-                <Route path="eleves" element={<Students />} />
-                <Route path="eleves/ajouter" element={<AddStudent />} />
-                <Route path="eleves/modifier/:id" element={<EditStudent />} />
-                <Route path="eleves/:id" element={<StudentProfile />} />
-                <Route path="eleves/:id/messages" element={<StudentMessages />} />
+              {/* Élèves */}
+              <Route path="eleves" element={<S><Students /></S>} />
+              <Route path="eleves/ajouter" element={<S><AddStudent /></S>} />
+              <Route path="eleves/modifier/:id" element={<S><EditStudent /></S>} />
+              <Route path="eleves/:id" element={<S><StudentProfile /></S>} />
+              <Route path="eleves/:id/messages" element={<S><StudentMessages /></S>} />
 
-                {/* Enseignants */}
-                <Route path="enseignants" element={<Teachers />} />
-                <Route path="enseignants/ajouter" element={<AddTeacher />} />
-                <Route path="enseignants/modifier/:id" element={<EditTeacher />} />
+              {/* Enseignants */}
+              <Route path="enseignants" element={<S><Teachers /></S>} />
+              <Route path="enseignants/ajouter" element={<S><AddTeacher /></S>} />
+              <Route path="enseignants/modifier/:id" element={<S><EditTeacher /></S>} />
 
-                {/* Absences */}
-                <Route path="absences" element={<AbsencesPage />} />
+              {/* Absences */}
+              <Route path="absences" element={<S><AbsencesPage /></S>} />
 
-                {/* Inscriptions (Board 13) */}
-                <Route path="inscriptions" element={<InscriptionsPage />} />
+              {/* Inscriptions (Board 13) */}
+              <Route path="inscriptions" element={<S><InscriptionsPage /></S>} />
 
-                {/* Emploi du temps */}
-                <Route path="emploi-du-temps" element={<EmploiDuTempsPage />} />
-                <Route path="emploi-salles" element={<EmploiSalles />} />
-                <Route path="emploi-salles/ajouter" element={<AddRoom />} />
-                <Route path="emploi-salles/modifier/:id" element={<EditRoom />} />
+              {/* Emploi du temps */}
+              <Route path="emploi-du-temps" element={<S><EmploiDuTempsPage /></S>} />
+              <Route path="emploi-salles" element={<S><EmploiSalles /></S>} />
+              <Route path="emploi-salles/ajouter" element={<S><AddRoom /></S>} />
+              <Route path="emploi-salles/modifier/:id" element={<S><EditRoom /></S>} />
 
-                {/* Configuration */}
-                <Route path="config/niveaux" element={<Niveaux />} />
-                <Route path="ecole" element={<SchoolInfo />} />
+              {/* Configuration */}
+              <Route path="config/niveaux" element={<S><Niveaux /></S>} />
+              <Route path="ecole" element={<S><SchoolInfo /></S>} />
 
-                {/* Finance */}
-                <Route path="finance" element={<FinancePaiement />} />
-                <Route path="finance/paiement" element={<FinancePaiement />} />
-                <Route path="finance/depenses" element={<Depenses />} />
-                <Route path="finance/tresorerie" element={<Tresorerie />} />
-                <Route path="finance/remises-penalites" element={<RemisesPenalites />} />
-                <Route path="finance/relances" element={<Relances />} />
-                <Route path="finance/rapports" element={<RapportsFinanciers />} />
-                <Route path="finance/caisse" element={<GestionCaisse />} />
-                <Route path="factures" element={<FacturesPage />} />
+              {/* Finance */}
+              <Route path="finance" element={<S><FinancePaiement /></S>} />
+              <Route path="finance/paiement" element={<S><FinancePaiement /></S>} />
+              <Route path="finance/depenses" element={<S><Depenses /></S>} />
+              <Route path="finance/tresorerie" element={<S><Tresorerie /></S>} />
+              <Route path="finance/remises-penalites" element={<S><RemisesPenalites /></S>} />
+              <Route path="finance/relances" element={<S><Relances /></S>} />
+              <Route path="finance/rapports" element={<S><RapportsFinanciers /></S>} />
+              <Route path="finance/caisse" element={<S><GestionCaisse /></S>} />
+              <Route path="factures" element={<S><FacturesPage /></S>} />
 
-                {/* Pédagogie */}
-                <Route path="evaluations" element={<Evaluations />} />
-                <Route path="carnets" element={<CarnetNotes />} />
-                <Route path="annee-scolaire" element={<AnneeScolairePage />} />
-                <Route path="devoirs" element={<DevoirsPage />} />
-                <Route path="quiz" element={<QuizManagementPage />} />
+              {/* Pédagogie */}
+              <Route path="evaluations" element={<S><Evaluations /></S>} />
+              <Route path="carnets" element={<S><CarnetNotes /></S>} />
+              <Route path="annee-scolaire" element={<S><AnneeScolairePage /></S>} />
+              <Route path="devoirs" element={<S><DevoirsPage /></S>} />
+              <Route path="quiz" element={<S><QuizManagementPage /></S>} />
 
-                {/* Bulletins */}
-                <Route path="bulletin-templates" element={<BulletinTemplatesPage />} />
-                <Route path="bulletins-masse" element={<BulletinsMassePage />} />
-                <Route path="stats-reussite" element={<StatsReussitePage />} />
-                <Route path="comparatif" element={<ComparatifPerformancesPage />} />
+              {/* Bulletins */}
+              <Route path="bulletin-templates" element={<S><BulletinTemplatesPage /></S>} />
+              <Route path="bulletins-masse" element={<S><BulletinsMassePage /></S>} />
+              <Route path="stats-reussite" element={<S><StatsReussitePage /></S>} />
+              <Route path="comparatif" element={<S><ComparatifPerformancesPage /></S>} />
 
-                {/* Vie scolaire */}
-                <Route path="discipline" element={<DisciplinePage />} />
-                <Route path="bibliotheque" element={<BibliothequePage />} />
-                <Route path="transport" element={<TransportPage />} />
-                <Route path="cantine" element={<CantinePage />} />
+              {/* Vie scolaire */}
+              <Route path="discipline" element={<S><DisciplinePage /></S>} />
+              <Route path="bibliotheque" element={<S><BibliothequePage /></S>} />
+              <Route path="transport" element={<S><TransportPage /></S>} />
+              <Route path="cantine" element={<S><CantinePage /></S>} />
 
-                {/* Documents */}
-                <Route path="rapports" element={<Rapports />} />
-                <Route path="circulaires" element={<Circulaires />} />
-                <Route path="documents" element={<GenerationDocumentsPage />} />
+              {/* Documents */}
+              <Route path="rapports" element={<S><Rapports /></S>} />
+              <Route path="circulaires" element={<S><Circulaires /></S>} />
+              <Route path="documents" element={<S><GenerationDocumentsPage /></S>} />
 
-                {/* Communication */}
-                <Route path="notifications" element={<NotificationsPage />} />
-                <Route path="annonces" element={<AnnoncesPage />} />
+              {/* Communication */}
+              <Route path="notifications" element={<S><NotificationsPage /></S>} />
+              <Route path="annonces" element={<S><AnnoncesPage /></S>} />
 
-                {/* Portail Parent */}
-                <Route path="portail-parent" element={<ParentPortalPage />} />
+              {/* Portail Parent */}
+              <Route path="portail-parent" element={<S><ParentPortalPage /></S>} />
 
-                {/* RH & Personnel (Board 19) */}
-                <Route path="contrats" element={<ContratsPage />} />
-                <Route path="rh/pointage" element={<PointagePage />} />
-                <Route path="rh/paie" element={<PaiePage />} />
-                <Route path="rh/formations" element={<FormationsPage />} />
-                <Route path="teacher-evaluations" element={<TeacherEvaluationsPage />} />
+              {/* RH & Personnel (Board 19) */}
+              <Route path="contrats" element={<S><ContratsPage /></S>} />
+              <Route path="rh/pointage" element={<S><PointagePage /></S>} />
+              <Route path="rh/paie" element={<S><PaiePage /></S>} />
+              <Route path="rh/formations" element={<S><FormationsPage /></S>} />
+              <Route path="teacher-evaluations" element={<S><TeacherEvaluationsPage /></S>} />
 
-                {/* Analytics (Board 22) */}
-                <Route path="analytics" element={<AnalyticsDashboardPage />} />
-                <Route path="suivi-eleve" element={<SuiviElevePage />} />
+              {/* Analytics (Board 22) */}
+              <Route path="analytics" element={<S><AnalyticsDashboardPage /></S>} />
+              <Route path="suivi-eleve" element={<S><SuiviElevePage /></S>} />
 
-                {/* Intégrations (Board 21) */}
-                <Route path="integrations" element={<IntegrationsPage />} />
+              {/* Intégrations (Board 21) */}
+              <Route path="integrations" element={<S><IntegrationsPage /></S>} />
 
-                {/* SaaS Admin (Board 24) */}
-                <Route path="super-admin" element={<SuperAdminDashboardPage />} />
+              {/* SaaS Admin (Board 24) */}
+              <Route path="super-admin" element={<S><SuperAdminDashboardPage /></S>} />
 
-                {/* Vitrine */}
-                <Route path="vitrine" element={<VitrineAdminPage />} />
+              {/* Vitrine */}
+              <Route path="vitrine" element={<S><VitrineAdminPage /></S>} />
 
-                {/* Administration */}
-                <Route path="utilisateurs" element={<UsersPage />} />
-                <Route path="configuration" element={<Configuration />} />
-                <Route path="tracabilite" element={<Tracabilite />} />
-                <Route path="statistique" element={<Statistiques />} />
+              {/* Administration */}
+              <Route path="utilisateurs" element={<S><UsersPage /></S>} />
+              <Route path="configuration" element={<S><Configuration /></S>} />
+              <Route path="tracabilite" element={<S><Tracabilite /></S>} />
+              <Route path="statistique" element={<S><Statistiques /></S>} />
 
-                <Route path="*" element={<Dashboard />} />
-              </Suspense>
+              <Route path="*" element={<S><Dashboard /></S>} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
@@ -260,6 +264,7 @@ const App = () => (
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
+  </ErrorBoundary>
 );
 
 export default App;

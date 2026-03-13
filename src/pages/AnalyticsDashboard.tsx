@@ -15,7 +15,7 @@ import {
   AlertCircle,
   XCircle,
 } from "lucide-react";
-import { toast } from "sonner";
+import { notify } from "@/lib/toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -106,23 +106,23 @@ export default function AnalyticsDashboard() {
 
   const handleSaveKpi = () => {
     if (!form.nom) {
-      toast.error("Le nom est requis");
+      notify.error("Le nom est requis");
       return;
     }
     if (editId) {
       updateKpi.mutate({ id: editId, data: form }, {
-        onSuccess: () => { toast.success("KPI mis a jour"); setShowForm(false); setEditId(null); },
+        onSuccess: () => { notify.success("KPI mis a jour"); setShowForm(false); setEditId(null); },
       });
     } else {
       createKpi.mutate(form, {
-        onSuccess: () => { toast.success("KPI cree"); setShowForm(false); },
+        onSuccess: () => { notify.success("KPI cree"); setShowForm(false); },
       });
     }
   };
 
   const handleDeleteKpi = (id: number) => {
     deleteKpi.mutate(id, {
-      onSuccess: () => toast.success("KPI supprime"),
+      onSuccess: () => notify.success("KPI supprime"),
     });
   };
 

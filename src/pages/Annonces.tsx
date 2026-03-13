@@ -46,7 +46,7 @@ import {
   useDeleteAnnonce,
 } from "@/hooks/useAnnonces";
 import type { Annonce, AnnonceType, DestinatairesType } from "@/types/notification";
-import { toast } from "sonner";
+import { notify } from "@/lib/toast";
 
 const TYPE_LABELS: Record<AnnonceType, string> = {
   GENERAL: "General",
@@ -127,7 +127,7 @@ export default function AnnoncesPage() {
 
   const handleSubmit = () => {
     if (!form.titre.trim() || !form.contenu.trim()) {
-      toast.error("Le titre et le contenu sont requis");
+      notify.error("Le titre et le contenu sont requis");
       return;
     }
 
@@ -145,27 +145,27 @@ export default function AnnoncesPage() {
         { id: editId, data: payload as Partial<Annonce> },
         {
           onSuccess: () => {
-            toast.success("Annonce mise a jour");
+            notify.success("Annonce mise a jour");
             setShowDialog(false);
           },
-          onError: () => toast.error("Erreur lors de la mise a jour"),
+          onError: () => notify.error("Erreur lors de la mise a jour"),
         }
       );
     } else {
       createAnnonce.mutate(payload as Omit<Annonce, "id" | "createdAt" | "actif">, {
         onSuccess: () => {
-          toast.success("Annonce creee");
+          notify.success("Annonce creee");
           setShowDialog(false);
         },
-        onError: () => toast.error("Erreur lors de la creation"),
+        onError: () => notify.error("Erreur lors de la creation"),
       });
     }
   };
 
   const handleDelete = (id: number) => {
     deleteAnnonce.mutate(id, {
-      onSuccess: () => toast.success("Annonce supprimee"),
-      onError: () => toast.error("Erreur lors de la suppression"),
+      onSuccess: () => notify.success("Annonce supprimee"),
+      onError: () => notify.error("Erreur lors de la suppression"),
     });
   };
 

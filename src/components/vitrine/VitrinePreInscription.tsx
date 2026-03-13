@@ -26,7 +26,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { VitrineConfig } from "@/types/vitrine";
 import axios from "axios";
 import env from "@/config/env";
-import { toast } from "sonner";
+import { notify } from "@/lib/toast";
 
 interface Props {
   config: VitrineConfig;
@@ -113,9 +113,9 @@ export default function VitrinePreInscription({ config }: Props) {
       );
       const data = res.data?.data ?? res.data;
       setSubmitted(data);
-      toast.success("Inscription soumise avec succes !");
+      notify.success("Inscription soumise avec succes !");
     } catch {
-      toast.error("Erreur lors de la soumission. Veuillez reessayer.");
+      notify.error("Erreur lors de la soumission. Veuillez reessayer.");
     } finally {
       setLoading(false);
     }
@@ -142,7 +142,7 @@ export default function VitrinePreInscription({ config }: Props) {
   const handleCopy = () => {
     if (submitted?.numeroDossier) {
       navigator.clipboard.writeText(submitted.numeroDossier);
-      toast.success("Numero copie !");
+      notify.success("Numero copie !");
     }
   };
 

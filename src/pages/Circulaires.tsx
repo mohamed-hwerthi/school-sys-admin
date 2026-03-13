@@ -20,7 +20,7 @@ import {
   Star,
   Archive,
 } from "lucide-react";
-import { toast } from "sonner";
+import { notify } from "@/lib/toast";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -115,7 +115,7 @@ export default function Circulaires() {
   const handleDelete = () => {
     if (!deleteTarget) return;
     setCirculaires((prev) => prev.filter((c) => c.id !== deleteTarget.id));
-    toast.success("Circulaire supprimée");
+    notify.success("Circulaire supprimée");
     setDeleteTarget(null);
   };
 
@@ -123,14 +123,14 @@ export default function Circulaires() {
     setCirculaires((prev) =>
       prev.map((c) => c.id === id ? { ...c, statut: "Publiée" as const, datePublication: new Date().toISOString().split("T")[0] } : c)
     );
-    toast.success("Circulaire publiée");
+    notify.success("Circulaire publiée");
   };
 
   const handleArchive = (id: number) => {
     setCirculaires((prev) =>
       prev.map((c) => c.id === id ? { ...c, statut: "Archivée" as const } : c)
     );
-    toast.success("Circulaire archivée");
+    notify.success("Circulaire archivée");
   };
 
   if (loading) return <DashboardSkeleton />;
@@ -148,7 +148,7 @@ export default function Circulaires() {
           <h1 className="font-heading text-xl md:text-2xl font-bold text-foreground">Circulaires</h1>
           <p className="text-sm text-muted-foreground mt-0.5">Communications, règlements et annonces</p>
         </div>
-        <Button size="sm" className="gap-1.5 bg-gradient-primary shadow-btn w-fit" onClick={() => toast.info("Création de circulaire à venir")}>
+        <Button size="sm" className="gap-1.5 bg-gradient-primary shadow-btn w-fit" onClick={() => notify.info("Création de circulaire à venir")}>
           <Plus className="h-4 w-4" />
           Nouvelle circulaire
         </Button>

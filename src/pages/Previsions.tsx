@@ -21,7 +21,7 @@ import {
   ResponsiveContainer,
   Legend,
 } from "recharts";
-import { toast } from "sonner";
+import { notify } from "@/lib/toast";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -151,15 +151,15 @@ export default function Previsions() {
 
   const handleCreate = () => {
     if (!form.label || !form.montantPrevu) {
-      toast.error("Veuillez remplir les champs obligatoires");
+      notify.error("Veuillez remplir les champs obligatoires");
       return;
     }
     createBudget.mutate(form, {
       onSuccess: () => {
-        toast.success("Ligne budgetaire ajoutee");
+        notify.success("Ligne budgetaire ajoutee");
         setAddDialogOpen(false);
       },
-      onError: (err) => toast.error(err.message),
+      onError: (err) => notify.error(err.message),
     });
   };
 
@@ -169,10 +169,10 @@ export default function Previsions() {
       { id: editBudget.id, data: form },
       {
         onSuccess: () => {
-          toast.success("Ligne budgetaire modifiee");
+          notify.success("Ligne budgetaire modifiee");
           setEditBudget(null);
         },
-        onError: (err) => toast.error(err.message),
+        onError: (err) => notify.error(err.message),
       }
     );
   };
@@ -181,17 +181,17 @@ export default function Previsions() {
     if (!deleteTarget) return;
     deleteBudgetMutation.mutate(deleteTarget.id, {
       onSuccess: () => {
-        toast.success("Ligne budgetaire supprimee");
+        notify.success("Ligne budgetaire supprimee");
         setDeleteTarget(null);
       },
-      onError: (err) => toast.error(err.message),
+      onError: (err) => notify.error(err.message),
     });
   };
 
   const handleExport = () => {
     exportComptable.mutate(anneeScolaire, {
-      onSuccess: () => toast.success("Export telecharge"),
-      onError: (err) => toast.error(err.message),
+      onSuccess: () => notify.success("Export telecharge"),
+      onError: (err) => notify.error(err.message),
     });
   };
 

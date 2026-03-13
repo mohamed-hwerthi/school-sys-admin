@@ -44,3 +44,25 @@ export interface Remplacement {
   motif?: string;
   createdAt?: string;
 }
+
+// --- Auto-generation types ---
+
+export interface TeachingAssignment {
+  classeId: number;
+  moduleId: number;
+  enseignantId: number;
+  nbHeures: number;
+}
+
+export interface TimetableGenerateRequest {
+  assignments: TeachingAssignment[];
+  rooms: string[];
+  solverTimeoutSeconds?: number;
+}
+
+export interface TimetableGenerateResponse {
+  status: 'SOLVED' | 'INFEASIBLE';
+  score: string;
+  entries: EmploiDuTempsEntry[];
+  unresolvedConflicts: string[];
+}

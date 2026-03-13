@@ -1,5 +1,13 @@
 import api from "./axios";
-import type { EmploiDuTempsEntry, Creneau, Conflit, Remplacement, RemplacementRequest } from "@/types/emploi-du-temps";
+import type {
+  EmploiDuTempsEntry,
+  Creneau,
+  Conflit,
+  Remplacement,
+  RemplacementRequest,
+  TimetableGenerateRequest,
+  TimetableGenerateResponse,
+} from "@/types/emploi-du-temps";
 
 const BASE = "/emploi-du-temps";
 
@@ -52,5 +60,11 @@ export const emploiDuTempsApi = {
 
   deleteRemplacement: async (id: number): Promise<void> => {
     await api.delete(`${BASE}/remplacements/${id}`);
+  },
+
+  // Auto-generation
+  generate: async (request: TimetableGenerateRequest): Promise<TimetableGenerateResponse> => {
+    const res = await api.post<TimetableGenerateResponse>(`${BASE}/generate`, request);
+    return res.data;
   },
 };

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { Plus, Edit, Trash2, BookOpen, GraduationCap } from "lucide-react";
-import { toast } from "sonner";
+import { notify } from "@/lib/toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -69,7 +69,7 @@ export default function ModulesTab() {
 
   const openAdd = () => {
     if (!selectedNiveauId) {
-      toast.error("Veuillez sélectionner un niveau d'abord");
+      notify.error("Veuillez sélectionner un niveau d'abord");
       return;
     }
     setEditId(null);
@@ -97,7 +97,7 @@ export default function ModulesTab() {
 
   const handleSave = () => {
     if (!form.name.trim()) {
-      toast.error("Le nom du module est obligatoire");
+      notify.error("Le nom du module est obligatoire");
       return;
     }
     if (editId) {
@@ -105,19 +105,19 @@ export default function ModulesTab() {
         { id: editId, data: form },
         {
           onSuccess: () => {
-            toast.success("Module modifié");
+            notify.success("Module modifié");
             setShowDialog(false);
           },
-          onError: () => toast.error("Erreur lors de la modification"),
+          onError: () => notify.error("Erreur lors de la modification"),
         }
       );
     } else {
       createModule.mutate(form, {
         onSuccess: () => {
-          toast.success("Module créé");
+          notify.success("Module créé");
           setShowDialog(false);
         },
-        onError: () => toast.error("Erreur lors de la création"),
+        onError: () => notify.error("Erreur lors de la création"),
       });
     }
   };
@@ -126,10 +126,10 @@ export default function ModulesTab() {
     if (!deleteTarget) return;
     deleteModule.mutate(deleteTarget.id, {
       onSuccess: () => {
-        toast.success("Module supprimé");
+        notify.success("Module supprimé");
         setDeleteTarget(null);
       },
-      onError: () => toast.error("Erreur lors de la suppression"),
+      onError: () => notify.error("Erreur lors de la suppression"),
     });
   };
 

@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import { Save, MessageSquare, GraduationCap, Users } from "lucide-react";
-import { toast } from "sonner";
+import { notify } from "@/lib/toast";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -154,12 +154,12 @@ export default function AppreciationsTab() {
         texte: r.texte,
       }));
     if (items.length === 0) {
-      toast.error("Aucune recommandation à sauvegarder");
+      notify.error("Aucune recommandation à sauvegarder");
       return;
     }
     upsertRecos.mutate(items, {
-      onSuccess: () => toast.success("Recommandations sauvegardées"),
-      onError: () => toast.error("Erreur lors de la sauvegarde"),
+      onSuccess: () => notify.success("Recommandations sauvegardées"),
+      onError: () => notify.error("Erreur lors de la sauvegarde"),
     });
   };
 
@@ -185,12 +185,12 @@ export default function AppreciationsTab() {
         certificatType: o.certificatType || undefined,
       }));
     if (items.length === 0) {
-      toast.error("Aucune observation à sauvegarder");
+      notify.error("Aucune observation à sauvegarder");
       return;
     }
     upsertObs.mutate(items, {
-      onSuccess: () => toast.success("Observations sauvegardées"),
-      onError: () => toast.error("Erreur lors de la sauvegarde"),
+      onSuccess: () => notify.success("Observations sauvegardées"),
+      onError: () => notify.error("Erreur lors de la sauvegarde"),
     });
   };
 
