@@ -1,9 +1,11 @@
 import { View, Text, ScrollView, TouchableOpacity, Alert } from "react-native";
 import { useAuth } from "@/context/AuthContext";
+import { useNavigation } from "@react-navigation/native";
 import { colors, spacing, fontSize, borderRadius } from "@/constants/theme";
 
 export default function MoreTab() {
   const { user, logout } = useAuth();
+  const navigation = useNavigation<any>();
 
   const handleLogout = () => {
     Alert.alert("Deconnexion", "Etes-vous sur de vouloir vous deconnecter ?", [
@@ -14,7 +16,8 @@ export default function MoreTab() {
 
   const menuItems = [
     { icon: "👤", label: "Mon profil", onPress: () => {} },
-    { icon: "🔔", label: "Notifications", onPress: () => {} },
+    { icon: "🔔", label: "Notifications", onPress: () => navigation.navigate("Notifications") },
+    { icon: "💳", label: "Paiements", onPress: () => navigation.navigate("PaymentHistory") },
     { icon: "🔒", label: "Securite & 2FA", onPress: () => {} },
     { icon: "🌙", label: "Theme sombre", onPress: () => {} },
     { icon: "🌐", label: "Langue", onPress: () => {} },

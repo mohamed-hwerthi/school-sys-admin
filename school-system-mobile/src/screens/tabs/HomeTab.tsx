@@ -2,6 +2,7 @@ import { View, Text, ScrollView, TouchableOpacity, RefreshControl, ActivityIndic
 import { useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useChild } from "@/context/ChildContext";
+import { useNavigation } from "@react-navigation/native";
 import { ChildSelector } from "@/components/ChildSelector";
 import { StatCard } from "@/components/StatCard";
 import { EmptyState } from "@/components/EmptyState";
@@ -14,6 +15,7 @@ import { parentPortalApi } from "@/api/parent-portal.api";
 export default function HomeTab() {
   const { user } = useAuth();
   const { selectedChild, isLoading: childrenLoading, refetch: refetchChildren } = useChild();
+  const navigation = useNavigation<any>();
 
   // Notifications count
   const { data: unreadCount = 0 } = useQuery({
@@ -61,10 +63,10 @@ export default function HomeTab() {
 
   // Quick action buttons
   const quickActions = [
-    { icon: "📊", label: "Voir les notes", tab: "grades" },
-    { icon: "🗓️", label: "Emploi du temps", tab: "timetable" },
-    { icon: "📋", label: "Absences", tab: "more" },
-    { icon: "📄", label: "Bulletins", tab: "more" },
+    { icon: "📊", label: "Voir les notes", onPress: () => navigation.navigate("Tabs", { screen: "Notes" }) },
+    { icon: "🗓️", label: "Emploi du temps", onPress: () => navigation.navigate("Tabs", { screen: "EDT" }) },
+    { icon: "💳", label: "Paiements", onPress: () => navigation.navigate("PaymentHistory") },
+    { icon: "🔔", label: "Notifications", onPress: () => navigation.navigate("Notifications") },
   ];
 
   return (
@@ -89,16 +91,20 @@ export default function HomeTab() {
 
       {/* Notification Banner */}
       {unreadCount > 0 && (
-        <View style={{
-          backgroundColor: colors.info + "15",
-          borderRadius: borderRadius.lg,
-          padding: spacing.md,
-          flexDirection: "row",
-          alignItems: "center",
-          marginBottom: spacing.lg,
-          borderWidth: 1,
-          borderColor: colors.info + "30",
-        }}>
+        <TouchableOpacity
+          onPress={() => navigation.navigate("Notifications")}
+          activeOpacity={0.7}
+          style={{
+            backgroundColor: colors.info + "15",
+            borderRadius: borderRadius.lg,
+            padding: spacing.md,
+            flexDirection: "row",
+            alignItems: "center",
+            marginBottom: spacing.lg,
+            borderWidth: 1,
+            borderColor: colors.info + "30",
+          }}
+        >
           <View style={{
             width: 36, height: 36, borderRadius: 12,
             backgroundColor: colors.info + "20",
@@ -114,7 +120,8 @@ export default function HomeTab() {
               non lue{unreadCount > 1 ? "s" : ""}
             </Text>
           </View>
-        </View>
+          <Text style={{ fontSize: fontSize.md, color: colors.textMuted }}>›</Text>
+        </TouchableOpacity>
       )}
 
       {/* Child Selector */}
@@ -263,9 +270,7 @@ export default function HomeTab() {
             {quickActions.map((action) => (
               <TouchableOpacity
                 key={action.label}
-                onPress={() => {
-                  // Tab switching placeholder - these will navigate in the future
-                }}
+                onPress={action.onPress}
                 style={{
                   width: "48%",
                   backgroundColor: colors.surface,

@@ -4,6 +4,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { ActivityIndicator, View, Text } from "react-native";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { ChildProvider } from "@/context/ChildContext";
@@ -13,6 +14,9 @@ import GradesTab from "@/screens/tabs/GradesTab";
 import TimetableTab from "@/screens/tabs/TimetableTab";
 import MessagesTab from "@/screens/tabs/MessagesTab";
 import MoreTab from "@/screens/tabs/MoreTab";
+import NotificationsTab from "@/screens/tabs/NotificationsTab";
+import PaymentHistoryScreen from "@/screens/PaymentHistoryScreen";
+import AnnouncementDetailScreen from "@/screens/AnnouncementDetailScreen";
 import { colors } from "@/constants/theme";
 
 const queryClient = new QueryClient({
@@ -22,6 +26,7 @@ const queryClient = new QueryClient({
 });
 
 const Tab = createBottomTabNavigator();
+const Stack = createNativeStackNavigator();
 
 function TabIcon({ label, focused }: { label: string; focused: boolean }) {
   const icons: Record<string, string> = {
@@ -65,6 +70,29 @@ function MainTabs() {
   );
 }
 
+function MainStack() {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="Tabs" component={MainTabs} />
+      <Stack.Screen
+        name="Notifications"
+        component={NotificationsTab}
+        options={{ animation: "slide_from_right" }}
+      />
+      <Stack.Screen
+        name="PaymentHistory"
+        component={PaymentHistoryScreen}
+        options={{ animation: "slide_from_right" }}
+      />
+      <Stack.Screen
+        name="AnnouncementDetail"
+        component={AnnouncementDetailScreen}
+        options={{ animation: "slide_from_bottom" }}
+      />
+    </Stack.Navigator>
+  );
+}
+
 function AppContent() {
   const { isAuthenticated, isLoading } = useAuth();
 
@@ -88,7 +116,7 @@ function AppContent() {
 
   return (
     <ChildProvider>
-      <MainTabs />
+      <MainStack />
     </ChildProvider>
   );
 }
