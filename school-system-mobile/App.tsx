@@ -22,6 +22,11 @@ import DisciplineScreen from "@/screens/DisciplineScreen";
 import HomeworkScreen from "@/screens/HomeworkScreen";
 import HomeworkDetailScreen from "@/screens/HomeworkDetailScreen";
 import ResourcesScreen from "@/screens/ResourcesScreen";
+import QuizListScreen from "@/screens/QuizListScreen";
+import QuizDetailScreen from "@/screens/QuizDetailScreen";
+import QuizPassationScreen from "@/screens/QuizPassationScreen";
+import CantineScreen from "@/screens/CantineScreen";
+import TransportScreen from "@/screens/TransportScreen";
 import { colors } from "@/constants/theme";
 
 const queryClient = new QueryClient({
@@ -117,6 +122,31 @@ function MainStack() {
       <Stack.Screen
         name="Resources"
         component={ResourcesScreen}
+        options={{ animation: "slide_from_right" }}
+      />
+      <Stack.Screen
+        name="QuizList"
+        component={QuizListScreen}
+        options={{ animation: "slide_from_right" }}
+      />
+      <Stack.Screen
+        name="QuizDetail"
+        component={QuizDetailScreen}
+        options={{ animation: "slide_from_right" }}
+      />
+      <Stack.Screen
+        name="QuizPassation"
+        component={QuizPassationScreen}
+        options={{ animation: "slide_from_right" }}
+      />
+      <Stack.Screen
+        name="Cantine"
+        component={CantineScreen}
+        options={{ animation: "slide_from_right" }}
+      />
+      <Stack.Screen
+        name="Transport"
+        component={TransportScreen}
         options={{ animation: "slide_from_right" }}
       />
     </Stack.Navigator>
