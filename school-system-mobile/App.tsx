@@ -6,6 +6,7 @@ import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { ActivityIndicator, View, Text } from "react-native";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
+import { ChildProvider } from "@/context/ChildContext";
 import LoginScreen from "@/screens/LoginScreen";
 import HomeTab from "@/screens/tabs/HomeTab";
 import GradesTab from "@/screens/tabs/GradesTab";
@@ -85,7 +86,11 @@ function AppContent() {
     return <LoginScreen />;
   }
 
-  return <MainTabs />;
+  return (
+    <ChildProvider>
+      <MainTabs />
+    </ChildProvider>
+  );
 }
 
 export default function App() {

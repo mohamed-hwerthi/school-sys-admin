@@ -1,24 +1,57 @@
 import { View, Text, ScrollView, TouchableOpacity, RefreshControl, ActivityIndicator } from "react-native";
+import { useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { useChild } from "@/context/ChildContext";
+import { ChildSelector } from "@/components/ChildSelector";
+import { StatCard } from "@/components/StatCard";
+import { EmptyState } from "@/components/EmptyState";
 import { colors, spacing, fontSize, borderRadius } from "@/constants/theme";
 import { useQuery } from "@tanstack/react-query";
-import { parentPortalApi } from "@/api/parent-portal.api";
 import { notificationsApi } from "@/api/notifications.api";
+import { notesApi } from "@/api/notes.api";
+import { parentPortalApi } from "@/api/parent-portal.api";
 
 export default function HomeTab() {
   const { user } = useAuth();
+  const { selectedChild, isLoading: childrenLoading, refetch: refetchChildren } = useChild();
 
-  const { data: children = [], isLoading, refetch } = useQuery({
-    queryKey: ["children"],
-    queryFn: parentPortalApi.getChildren,
-    enabled: user?.role === "PARENT",
-  });
-
+  // Notifications count
   const { data: unreadCount = 0 } = useQuery({
     queryKey: ["notifications-count"],
     queryFn: notificationsApi.getUnreadCount,
   });
 
+  // Notes for selected child (to compute average)
+  const { data: notes = [], isLoading: notesLoading, refetch: refetchNotes } = useQuery({
+    queryKey: ["child-notes-home", selectedChild?.id],
+    queryFn: () => notesApi.getByStudent(selectedChild!.id),
+    enabled: !!selectedChild?.id,
+  });
+
+  // Absences for selected child
+  const { data: absences = [], isLoading: absencesLoading, refetch: refetchAbsences } = useQuery({
+    queryKey: ["child-absences-home", selectedChild?.id],
+    queryFn: () => parentPortalApi.getChildAbsences(selectedChild!.id),
+    enabled: !!selectedChild?.id,
+  });
+
+  const isRefreshing = childrenLoading || notesLoading || absencesLoading;
+
+  const onRefresh = useCallback(() => {
+    refetchChildren();
+    refetchNotes();
+    refetchAbsences();
+  }, [refetchChildren, refetchNotes, refetchAbsences]);
+
+  // Compute grades average
+  const gradesAverage = notes.length > 0
+    ? (notes.reduce((sum: number, n: any) => sum + (n.note || 0), 0) / notes.length).toFixed(1)
+    : "--";
+
+  // Absences count
+  const absencesCount = absences.filter((a: any) => a.type === "ABSENCE").length;
+
+  // Greeting
   const greeting = () => {
     const hour = new Date().getHours();
     if (hour < 12) return "Bonjour";
@@ -26,14 +59,24 @@ export default function HomeTab() {
     return "Bonsoir";
   };
 
+  // Quick action buttons
+  const quickActions = [
+    { icon: "📊", label: "Voir les notes", tab: "grades" },
+    { icon: "🗓️", label: "Emploi du temps", tab: "timetable" },
+    { icon: "📋", label: "Absences", tab: "more" },
+    { icon: "📄", label: "Bulletins", tab: "more" },
+  ];
+
   return (
     <ScrollView
       style={{ flex: 1, backgroundColor: colors.background }}
-      contentContainerStyle={{ padding: spacing.lg }}
-      refreshControl={<RefreshControl refreshing={isLoading} onRefresh={refetch} tintColor={colors.primary} />}
+      contentContainerStyle={{ padding: spacing.lg, paddingBottom: spacing.xl * 2 }}
+      refreshControl={
+        <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor={colors.primary} />
+      }
     >
-      {/* Header */}
-      <View style={{ marginBottom: spacing.xl }}>
+      {/* Greeting Header */}
+      <View style={{ marginBottom: spacing.lg }}>
         <Text style={{ fontSize: fontSize.sm, color: colors.textSecondary }}>{greeting()}</Text>
         <Text style={{ fontSize: fontSize.heading, fontWeight: "800", color: colors.text }}>
           {user?.firstName} {user?.lastName}
@@ -44,64 +87,225 @@ export default function HomeTab() {
         </View>
       </View>
 
-      {/* Notification banner */}
+      {/* Notification Banner */}
       {unreadCount > 0 && (
         <View style={{
-          backgroundColor: colors.info + "15", borderRadius: borderRadius.lg, padding: spacing.md,
-          flexDirection: "row", alignItems: "center", marginBottom: spacing.lg,
-          borderWidth: 1, borderColor: colors.info + "30",
+          backgroundColor: colors.info + "15",
+          borderRadius: borderRadius.lg,
+          padding: spacing.md,
+          flexDirection: "row",
+          alignItems: "center",
+          marginBottom: spacing.lg,
+          borderWidth: 1,
+          borderColor: colors.info + "30",
         }}>
-          <View style={{ width: 36, height: 36, borderRadius: 12, backgroundColor: colors.info + "20", justifyContent: "center", alignItems: "center", marginRight: spacing.md }}>
+          <View style={{
+            width: 36, height: 36, borderRadius: 12,
+            backgroundColor: colors.info + "20",
+            justifyContent: "center", alignItems: "center", marginRight: spacing.md,
+          }}>
             <Text style={{ fontSize: 16 }}>🔔</Text>
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={{ fontSize: fontSize.sm, fontWeight: "700", color: colors.text }}>{unreadCount} notification{unreadCount > 1 ? "s" : ""}</Text>
-            <Text style={{ fontSize: fontSize.xs, color: colors.textSecondary }}>non lue{unreadCount > 1 ? "s" : ""}</Text>
+            <Text style={{ fontSize: fontSize.sm, fontWeight: "700", color: colors.text }}>
+              {unreadCount} notification{unreadCount > 1 ? "s" : ""}
+            </Text>
+            <Text style={{ fontSize: fontSize.xs, color: colors.textSecondary }}>
+              non lue{unreadCount > 1 ? "s" : ""}
+            </Text>
           </View>
         </View>
       )}
 
-      {/* Children cards */}
-      {user?.role === "PARENT" && (
+      {/* Child Selector */}
+      <ChildSelector />
+
+      {/* Loading state */}
+      {childrenLoading && (
+        <ActivityIndicator color={colors.primary} style={{ marginTop: spacing.xl }} />
+      )}
+
+      {/* No child selected */}
+      {!childrenLoading && !selectedChild && user?.role === "PARENT" && (
+        <EmptyState
+          icon="👨‍👧‍👦"
+          title="Aucun enfant associe"
+          subtitle="Aucun enfant n'est associe a votre compte."
+        />
+      )}
+
+      {/* Selected child content */}
+      {selectedChild && (
         <>
-          <Text style={{ fontSize: fontSize.lg, fontWeight: "700", color: colors.text, marginBottom: spacing.md }}>Mes enfants</Text>
-          {isLoading ? (
-            <ActivityIndicator color={colors.primary} style={{ marginTop: spacing.xl }} />
-          ) : children.length === 0 ? (
-            <View style={{ backgroundColor: colors.surface, borderRadius: borderRadius.lg, padding: spacing.xl, alignItems: "center" }}>
-              <Text style={{ fontSize: 40, marginBottom: spacing.sm }}>👨‍👧‍👦</Text>
-              <Text style={{ fontSize: fontSize.sm, color: colors.textSecondary, textAlign: "center" }}>Aucun enfant associe a votre compte</Text>
+          {/* Child Profile Card */}
+          <View style={{
+            backgroundColor: colors.surface,
+            borderRadius: borderRadius.lg,
+            padding: spacing.lg,
+            marginBottom: spacing.lg,
+            borderWidth: 1,
+            borderColor: colors.border,
+          }}>
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <View style={{
+                width: 56, height: 56, borderRadius: 18,
+                backgroundColor: colors.primary + "15",
+                justifyContent: "center", alignItems: "center", marginRight: spacing.md,
+              }}>
+                <Text style={{ fontSize: 22, fontWeight: "700", color: colors.primary }}>
+                  {(selectedChild.firstName || "?")[0]}{(selectedChild.lastName || "?")[0]}
+                </Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: fontSize.lg, fontWeight: "800", color: colors.text }}>
+                  {selectedChild.firstName} {selectedChild.lastName}
+                </Text>
+                <Text style={{ fontSize: fontSize.sm, color: colors.textSecondary, marginTop: 2 }}>
+                  {selectedChild.classe} - {selectedChild.niveau}
+                </Text>
+              </View>
             </View>
-          ) : children.map((child: any) => (
-            <View key={child.id} style={{
-              backgroundColor: colors.surface, borderRadius: borderRadius.lg, padding: spacing.lg,
-              marginBottom: spacing.md, borderWidth: 1, borderColor: colors.border,
+            {/* Details row */}
+            <View style={{
+              flexDirection: "row",
+              marginTop: spacing.md,
+              paddingTop: spacing.md,
+              borderTopWidth: 1,
+              borderTopColor: colors.border,
+              gap: spacing.lg,
             }}>
-              <View style={{ flexDirection: "row", alignItems: "center" }}>
-                <View style={{
-                  width: 48, height: 48, borderRadius: 16, backgroundColor: colors.primary + "15",
-                  justifyContent: "center", alignItems: "center", marginRight: spacing.md,
-                }}>
-                  <Text style={{ fontSize: 22, fontWeight: "700", color: colors.primary }}>
-                    {(child.firstName || "?")[0]}{(child.lastName || "?")[0]}
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: fontSize.xs, color: colors.textMuted }}>Matricule</Text>
+                <Text style={{ fontSize: fontSize.sm, fontWeight: "700", color: colors.text, marginTop: 2 }}>
+                  {selectedChild.matricule || "--"}
+                </Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: fontSize.xs, color: colors.textMuted }}>Classe</Text>
+                <Text style={{ fontSize: fontSize.sm, fontWeight: "700", color: colors.text, marginTop: 2 }}>
+                  {selectedChild.classe}
+                </Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: fontSize.xs, color: colors.textMuted }}>Statut</Text>
+                <View style={{ flexDirection: "row", alignItems: "center", marginTop: 2 }}>
+                  <View style={{
+                    width: 6, height: 6, borderRadius: 3, marginRight: 4,
+                    backgroundColor: selectedChild.status === "Actif" ? colors.success : colors.warning,
+                  }} />
+                  <Text style={{ fontSize: fontSize.sm, fontWeight: "700", color: colors.text }}>
+                    {selectedChild.status || "Actif"}
                   </Text>
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: fontSize.md, fontWeight: "700", color: colors.text }}>{child.firstName} {child.lastName}</Text>
-                  <Text style={{ fontSize: fontSize.xs, color: colors.textSecondary }}>{child.classe} - {child.niveau}</Text>
                 </View>
               </View>
             </View>
-          ))}
+          </View>
+
+          {/* Quick Stats Grid (2x2) */}
+          <Text style={{ fontSize: fontSize.lg, fontWeight: "700", color: colors.text, marginBottom: spacing.md }}>
+            Statistiques
+          </Text>
+          {(notesLoading || absencesLoading) ? (
+            <ActivityIndicator color={colors.primary} style={{ marginVertical: spacing.lg }} />
+          ) : (
+            <View style={{ gap: spacing.sm, marginBottom: spacing.lg }}>
+              <View style={{ flexDirection: "row", gap: spacing.sm }}>
+                <StatCard
+                  icon="📊"
+                  label="Moyenne generale"
+                  value={gradesAverage}
+                  color={
+                    notes.length === 0
+                      ? colors.info
+                      : parseFloat(String(gradesAverage)) >= 14
+                        ? colors.success
+                        : parseFloat(String(gradesAverage)) >= 10
+                          ? colors.warning
+                          : colors.error
+                  }
+                  subtitle={notes.length > 0 ? `${notes.length} note${notes.length > 1 ? "s" : ""}` : "Aucune note"}
+                />
+                <StatCard
+                  icon="📋"
+                  label="Absences"
+                  value={absencesCount}
+                  color={absencesCount === 0 ? colors.success : absencesCount <= 3 ? colors.warning : colors.error}
+                  subtitle={absencesCount === 0 ? "Aucune absence" : `${absencesCount} absence${absencesCount > 1 ? "s" : ""}`}
+                />
+              </View>
+              <View style={{ flexDirection: "row", gap: spacing.sm }}>
+                <StatCard
+                  icon="💳"
+                  label="Paiements"
+                  value="--"
+                  color={colors.info}
+                  subtitle="Consulter la finance"
+                />
+                <StatCard
+                  icon="📅"
+                  label="Retards"
+                  value={absences.filter((a: any) => a.type === "RETARD").length}
+                  color={colors.warning}
+                  subtitle="Ce trimestre"
+                />
+              </View>
+            </View>
+          )}
+
+          {/* Actions rapides */}
+          <Text style={{ fontSize: fontSize.lg, fontWeight: "700", color: colors.text, marginBottom: spacing.md }}>
+            Actions rapides
+          </Text>
+          <View style={{
+            flexDirection: "row", flexWrap: "wrap",
+            gap: spacing.sm, marginBottom: spacing.lg,
+          }}>
+            {quickActions.map((action) => (
+              <TouchableOpacity
+                key={action.label}
+                onPress={() => {
+                  // Tab switching placeholder - these will navigate in the future
+                }}
+                style={{
+                  width: "48%",
+                  backgroundColor: colors.surface,
+                  borderRadius: borderRadius.lg,
+                  padding: spacing.md,
+                  borderWidth: 1,
+                  borderColor: colors.border,
+                  flexDirection: "row",
+                  alignItems: "center",
+                }}
+                activeOpacity={0.7}
+              >
+                <View style={{
+                  width: 40, height: 40, borderRadius: 12,
+                  backgroundColor: colors.primary + "10",
+                  justifyContent: "center", alignItems: "center", marginRight: spacing.sm,
+                }}>
+                  <Text style={{ fontSize: 18 }}>{action.icon}</Text>
+                </View>
+                <Text style={{ fontSize: fontSize.sm, fontWeight: "600", color: colors.text, flexShrink: 1 }}>
+                  {action.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
         </>
       )}
 
-      {/* Quick actions for non-parents */}
-      {user?.role !== "PARENT" && (
-        <View style={{ backgroundColor: colors.surface, borderRadius: borderRadius.lg, padding: spacing.xl, alignItems: "center" }}>
+      {/* Non-parent welcome */}
+      {user?.role !== "PARENT" && !childrenLoading && (
+        <View style={{
+          backgroundColor: colors.surface, borderRadius: borderRadius.lg,
+          padding: spacing.xl, alignItems: "center",
+        }}>
           <Text style={{ fontSize: 40, marginBottom: spacing.sm }}>📚</Text>
           <Text style={{ fontSize: fontSize.md, fontWeight: "700", color: colors.text }}>Bienvenue sur EcoleNet</Text>
-          <Text style={{ fontSize: fontSize.sm, color: colors.textSecondary, textAlign: "center", marginTop: spacing.sm }}>
+          <Text style={{
+            fontSize: fontSize.sm, color: colors.textSecondary,
+            textAlign: "center", marginTop: spacing.sm,
+          }}>
             Consultez les notes, l'emploi du temps et les messages depuis votre telephone.
           </Text>
         </View>
