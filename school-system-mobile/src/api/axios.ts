@@ -1,5 +1,5 @@
 import axios from "axios";
-import * as SecureStore from "expo-secure-store";
+import { storage } from "@/utils/storage";
 import { API_BASE_URL } from "@/constants/api";
 
 const api = axios.create({
@@ -13,12 +13,12 @@ const REFRESH_TOKEN_KEY = "refreshToken";
 
 // Request interceptor - add auth token + tenant header
 api.interceptors.request.use(async (config) => {
-  const token = await SecureStore.getItemAsync(TOKEN_KEY);
+  const token = await storage.getItem(TOKEN_KEY);
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
   // Tenant will be set from user profile after login
-  const tenantId = await SecureStore.getItemAsync("tenantId");
+  const tenantId = await storage.getItem("tenantId");
   if (tenantId) {
     config.headers["X-Tenant-ID"] = tenantId;
   }
@@ -63,16 +63,16 @@ api.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        const refreshToken = await SecureStore.getItemAsync(REFRESH_TOKEN_KEY);
+        const refreshToken = await storage.getItem(REFRESH_TOKEN_KEY);
         if (!refreshToken) throw new Error("No refresh token");
 
         const res = await axios.post(`${API_BASE_URL}/auth/refresh-token`, { refreshToken });
         const newToken = res.data?.data?.accessToken || res.data?.accessToken;
 
         if (newToken) {
-          await SecureStore.setItemAsync(TOKEN_KEY, newToken);
+          await storage.setItem(TOKEN_KEY, newToken);
           if (res.data?.data?.refreshToken) {
-            await SecureStore.setItemAsync(REFRESH_TOKEN_KEY, res.data.data.refreshToken);
+            await storage.setItem(REFRESH_TOKEN_KEY, res.data.data.refreshToken);
           }
           originalRequest.headers.Authorization = `Bearer ${newToken}`;
           processQueue(null, newToken);
@@ -80,8 +80,8 @@ api.interceptors.response.use(
         }
       } catch (refreshError) {
         processQueue(refreshError, null);
-        await SecureStore.deleteItemAsync(TOKEN_KEY);
-        await SecureStore.deleteItemAsync(REFRESH_TOKEN_KEY);
+        await storage.deleteItem(TOKEN_KEY);
+        await storage.deleteItem(REFRESH_TOKEN_KEY);
         // Auth context will detect missing token and redirect to login
       } finally {
         isRefreshing = false;

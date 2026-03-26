@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react";
-import * as SecureStore from "expo-secure-store";
+import { storage } from "@/utils/storage";
 import { authApi } from "@/api/auth.api";
 import type { AuthUser, LoginRequest, LoginResponse } from "@/types/auth";
 
@@ -35,12 +35,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     (async () => {
       try {
-        const token = await SecureStore.getItemAsync(TOKEN_KEY);
+        const token = await storage.getItem(TOKEN_KEY);
         if (!token) { setIsLoading(false); return; }
 
         const userData = await authApi.getMe();
         setUser(userData);
-        await SecureStore.setItemAsync(USER_KEY, JSON.stringify(userData));
+        await storage.setItem(USER_KEY, JSON.stringify(userData));
       } catch {
         await clearAuth();
       } finally {
@@ -50,20 +50,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const clearAuth = useCallback(async () => {
-    await SecureStore.deleteItemAsync(TOKEN_KEY);
-    await SecureStore.deleteItemAsync(REFRESH_TOKEN_KEY);
-    await SecureStore.deleteItemAsync(USER_KEY);
-    await SecureStore.deleteItemAsync("tenantId");
+    await storage.deleteItem(TOKEN_KEY);
+    await storage.deleteItem(REFRESH_TOKEN_KEY);
+    await storage.deleteItem(USER_KEY);
+    await storage.deleteItem("tenantId");
     setUser(null);
     setTwoFactorPending(null);
   }, []);
 
   const storeTokens = useCallback(async (response: LoginResponse) => {
-    await SecureStore.setItemAsync(TOKEN_KEY, response.accessToken);
-    await SecureStore.setItemAsync(REFRESH_TOKEN_KEY, response.refreshToken);
-    await SecureStore.setItemAsync(USER_KEY, JSON.stringify(response.user));
+    await storage.setItem(TOKEN_KEY, response.accessToken);
+    await storage.setItem(REFRESH_TOKEN_KEY, response.refreshToken);
+    await storage.setItem(USER_KEY, JSON.stringify(response.user));
     if (response.user.tenantId) {
-      await SecureStore.setItemAsync("tenantId", response.user.tenantId);
+      await storage.setItem("tenantId", response.user.tenantId);
     }
     setUser(response.user);
     setTwoFactorPending(null);
@@ -89,7 +89,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const logout = useCallback(async () => {
-    const refreshToken = await SecureStore.getItemAsync(REFRESH_TOKEN_KEY);
+    const refreshToken = await storage.getItem(REFRESH_TOKEN_KEY);
     if (refreshToken) {
       try { await authApi.logout(refreshToken); } catch { /* ignore */ }
     }
