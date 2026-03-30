@@ -105,6 +105,9 @@ const GenerationDocumentsPage = lazy(() => import("./pages/GenerationDocuments")
 // Board 21: Intégrations
 const IntegrationsPage = lazy(() => import("./pages/Integrations"));
 
+// Meetings
+const ReunionsPage = lazy(() => import("./pages/Reunions"));
+
 // Board 22: Analytics
 const AnalyticsDashboardPage = lazy(() => import("./pages/AnalyticsDashboard"));
 const SuiviElevePage = lazy(() => import("./pages/SuiviEleve"));
@@ -238,6 +241,7 @@ const App = () => (
               {/* Communication */}
               <Route path="notifications" element={<G roles={STAFF_ROLES}><NotificationsPage /></G>} />
               <Route path="annonces" element={<G roles={STAFF_ROLES}><AnnoncesPage /></G>} />
+              <Route path="reunions" element={<G roles={STAFF_ROLES}><ReunionsPage /></G>} />
 
               {/* Portail Parent */}
               <Route path="portail-parent" element={<G roles={["PARENT"]}><ParentPortalPage /></G>} />

@@ -25,6 +25,7 @@ import {
   Receipt,
   Briefcase,
   CalendarClock,
+  CalendarDays,
   ShieldCheck,
   Palette,
   Printer,
@@ -146,6 +147,7 @@ export const sidebarSections: NavSection[] = [
     items: [
       { title: "Annonces", icon: Megaphone, url: "/dashboard/annonces" },
       { title: "Notifications", icon: BellRing, url: "/dashboard/notifications" },
+      { title: "Reunions", icon: CalendarDays, url: "/dashboard/reunions" },
       { title: "Circulaires", icon: Newspaper, url: "/dashboard/circulaires", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR"] },
     ],
   },

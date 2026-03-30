@@ -29,6 +29,11 @@ export const integrationsApi = {
     return res.data;
   },
 
+  sendBulkSms: async (phoneNumbers: string[], message: string): Promise<string[]> => {
+    const res = await api.post<string[]>(`${BASE}/sms/bulk`, { phoneNumbers, message });
+    return res.data;
+  },
+
   getWebhooks: async (): Promise<WebhookConfig[]> => {
     const res = await api.get<WebhookConfig[]>(`${BASE}/webhooks`);
     return res.data;
