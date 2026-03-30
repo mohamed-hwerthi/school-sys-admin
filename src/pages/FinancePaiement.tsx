@@ -74,6 +74,7 @@ import {
   useDeletePaiement,
 } from "@/hooks/useFinance";
 import { useAllStudents } from "@/hooks/useStudents";
+import ExportButton from "@/components/ExportButton";
 import { FinanceSkeleton } from "@/components/skeletons/FinanceSkeleton";
 import { PaiementForm } from "@/components/finance/PaiementForm";
 import { CommunicationDialog } from "@/components/finance/CommunicationDialog";
@@ -407,10 +408,11 @@ export default function FinancePaiement() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" className="gap-1.5">
-            <Download className="h-4 w-4" />
-            Exporter
-          </Button>
+          <ExportButton
+            type="paiements"
+            label="Exporter"
+            filters={{ anneeScolaire: "2025-2026" }}
+          />
           <Button
             size="sm"
             className="gap-1.5 bg-gradient-primary shadow-btn"
@@ -696,6 +698,15 @@ export default function FinancePaiement() {
                                 onClick={() => setViewPaiement(p)}
                               >
                                 <Eye className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-muted-foreground hover:text-emerald-600"
+                                onClick={() => handleDownloadRecu(p)}
+                                title="Telecharger recu"
+                              >
+                                <FileDown className="h-4 w-4" />
                               </Button>
                               <Button
                                 variant="ghost"

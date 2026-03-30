@@ -15,12 +15,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { PhotoUpload } from "@/components/students/PhotoUpload";
 
 interface StudentFormProps {
   defaultValues?: Partial<StudentFormValues>;
   onSubmit: (data: StudentFormValues) => void;
   onCancel: () => void;
   submitLabel?: string;
+  studentId?: number;
 }
 
 export function StudentForm({
@@ -28,6 +30,7 @@ export function StudentForm({
   onSubmit,
   onCancel,
   submitLabel = "Enregistrer",
+  studentId,
 }: StudentFormProps) {
   const { niveaux, getClassesForNiveau } = useNiveaux();
 
@@ -69,8 +72,22 @@ export function StudentForm({
   const estBloque = watch("estBloque");
   const classes = niveau ? getClassesForNiveau(niveau) : [];
 
+  const studentName = `${watch("prenom") || ""} ${watch("nom") || ""}`.trim();
+
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      {/* Photo */}
+      <div className="rounded-xl border border-border/50 bg-card p-6">
+        <h3 className="font-heading text-sm font-semibold text-foreground mb-4">
+          Photo de l'eleve
+        </h3>
+        <PhotoUpload
+          studentId={studentId}
+          studentName={studentName || "Eleve"}
+          size="lg"
+        />
+      </div>
+
       {/* Identité */}
       <div className="rounded-xl border border-border/50 bg-card p-6">
         <h3 className="font-heading text-sm font-semibold text-foreground mb-4">

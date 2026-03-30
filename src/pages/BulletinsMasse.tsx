@@ -6,6 +6,7 @@ import {
   Loader2,
   Users,
   BookOpen,
+  FileDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -20,10 +21,19 @@ import { Badge } from "@/components/ui/badge";
 import { notify } from "@/lib/toast";
 import { useClasses } from "@/hooks/useClasses";
 import { useNiveaux } from "@/hooks/useNiveaux";
+import { useSchool } from "@/hooks/useSchool";
+import { useBulletinTemplates } from "@/hooks/useBulletins";
 import { bulletinsApi, type BulletinDTO } from "@/api/bulletins.api";
+import {
+  generateBulletinPdf,
+  generateBulletinsMassePdf,
+} from "@/utils/generateBulletinPdf";
 
 export default function BulletinsMasse() {
   const { niveaux } = useNiveaux();
+  const { school } = useSchool();
+  const { data: templates = [] } = useBulletinTemplates();
+  const activeTemplate = templates.find((t) => t.actif) || null;
   const [selectedNiveau, setSelectedNiveau] = useState<number>(0);
   const { data: classes = [] } = useClasses(
     selectedNiveau || undefined
@@ -57,19 +67,13 @@ export default function BulletinsMasse() {
 
   const handleDownload = () => {
     if (!bulletins.length) return;
-    const lines = bulletins.map(
-      (b) =>
-        `${b.studentName} | Classe: ${b.classe} | Moyenne: ${b.moyenneGenerale} | Rang: ${b.rang}/${b.totalEleves}`
-    );
-    const content = `Bulletins - Trimestre ${selectedTrimestre}\n${"=".repeat(50)}\n\n${lines.join("\n")}`;
-    const blob = new Blob([content], { type: "text/plain" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `bulletins_T${selectedTrimestre}.txt`;
-    a.click();
-    URL.revokeObjectURL(url);
-    notify.success("Fichier telecharge");
+    generateBulletinsMassePdf(bulletins, school, selectedTrimestre, activeTemplate);
+    notify.success(`${bulletins.length} bulletins PDF telecharges`);
+  };
+
+  const handleDownloadSingle = (bulletin: BulletinDTO) => {
+    generateBulletinPdf(bulletin, school, activeTemplate);
+    notify.success(`Bulletin de ${bulletin.studentName} telecharge`);
   };
 
   const classeObj = classes.find((c) => c.id === selectedClasse);
@@ -232,6 +236,9 @@ export default function BulletinsMasse() {
                     <th className="pb-2 font-medium text-muted-foreground text-center">
                       Certificat
                     </th>
+                    <th className="pb-2 font-medium text-muted-foreground text-center">
+                      PDF
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -268,6 +275,17 @@ export default function BulletinsMasse() {
                         ) : (
                           <span className="text-muted-foreground">-</span>
                         )}
+                      </td>
+                      <td className="py-2 text-center">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-muted-foreground hover:text-blue-600"
+                          onClick={() => handleDownloadSingle(b)}
+                          title="Telecharger PDF"
+                        >
+                          <FileDown className="h-4 w-4" />
+                        </Button>
                       </td>
                     </tr>
                   ))}
