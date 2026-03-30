@@ -9,6 +9,8 @@ import {
   Calendar,
   Users,
   AlertTriangle,
+  MessageSquare,
+  Send,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -45,6 +47,7 @@ import {
   useUpdateAnnonce,
   useDeleteAnnonce,
 } from "@/hooks/useAnnonces";
+import { integrationsApi } from "@/api/integrations.api";
 import type { Annonce, AnnonceType, DestinatairesType } from "@/types/notification";
 import { notify } from "@/lib/toast";
 
@@ -90,6 +93,10 @@ const initialForm: FormState = {
 
 export default function AnnoncesPage() {
   const [showDialog, setShowDialog] = useState(false);
+  const [showSmsDialog, setShowSmsDialog] = useState(false);
+  const [smsPhones, setSmsPhones] = useState("");
+  const [smsMessage, setSmsMessage] = useState("");
+  const [smsSending, setSmsSending] = useState(false);
   const [editId, setEditId] = useState<number | null>(null);
   const [form, setForm] = useState<FormState>(initialForm);
   const [typeFilter, setTypeFilter] = useState<string>("ALL");
@@ -169,6 +176,31 @@ export default function AnnoncesPage() {
     });
   };
 
+  const handleSendBulkSms = async () => {
+    const phones = smsPhones
+      .split(/[,;\n]+/)
+      .map((p) => p.trim())
+      .filter(Boolean);
+
+    if (phones.length === 0 || !smsMessage.trim()) {
+      notify.error("Veuillez saisir au moins un numero et un message");
+      return;
+    }
+
+    setSmsSending(true);
+    try {
+      const result = await integrationsApi.sendBulkSms(phones, smsMessage);
+      notify.success(`SMS envoye a ${result.length}/${phones.length} destinataires`);
+      setShowSmsDialog(false);
+      setSmsPhones("");
+      setSmsMessage("");
+    } catch {
+      notify.error("Erreur lors de l'envoi des SMS");
+    } finally {
+      setSmsSending(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex h-[50vh] items-center justify-center">
@@ -201,6 +233,10 @@ export default function AnnoncesPage() {
               ))}
             </SelectContent>
           </Select>
+          <Button variant="outline" onClick={() => setShowSmsDialog(true)}>
+            <MessageSquare className="mr-2 h-4 w-4" />
+            Envoyer SMS
+          </Button>
           <Button onClick={handleOpenCreate}>
             <Plus className="mr-2 h-4 w-4" />
             Nouvelle annonce
@@ -291,6 +327,65 @@ export default function AnnoncesPage() {
           ))}
         </div>
       )}
+
+      {/* Bulk SMS dialog */}
+      <Dialog open={showSmsDialog} onOpenChange={setShowSmsDialog}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <MessageSquare className="h-5 w-5" />
+              Envoyer SMS en masse
+            </DialogTitle>
+            <DialogDescription>
+              Envoyez un SMS a tous les parents ou a une liste de numeros.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="smsPhones">Numeros de telephone</Label>
+              <Textarea
+                id="smsPhones"
+                value={smsPhones}
+                onChange={(e) => setSmsPhones(e.target.value)}
+                placeholder="Saisissez les numeros, separes par des virgules ou retours a la ligne...&#10;+212600000001&#10;+212600000002"
+                rows={4}
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Separez les numeros par des virgules, points-virgules ou retours a la ligne.
+              </p>
+            </div>
+            <div>
+              <Label htmlFor="smsMessage">Message</Label>
+              <Textarea
+                id="smsMessage"
+                value={smsMessage}
+                onChange={(e) => setSmsMessage(e.target.value)}
+                placeholder="Votre message SMS..."
+                rows={3}
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                {smsMessage.length}/160 caracteres
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline">
+                <X className="mr-2 h-4 w-4" />
+                Annuler
+              </Button>
+            </DialogClose>
+            <Button onClick={handleSendBulkSms} disabled={smsSending}>
+              {smsSending ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Send className="mr-2 h-4 w-4" />
+              )}
+              Envoyer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Create/Edit dialog */}
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
