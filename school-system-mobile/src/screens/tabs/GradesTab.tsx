@@ -3,6 +3,7 @@ import { useState, useCallback, useMemo } from "react";
 import { useChild } from "@/context/ChildContext";
 import { ChildSelector } from "@/components/ChildSelector";
 import { EmptyState } from "@/components/EmptyState";
+import { ErrorView } from "@/components/ErrorView";
 import { colors, spacing, fontSize, borderRadius } from "@/constants/theme";
 import { useQuery } from "@tanstack/react-query";
 import { notesApi } from "@/api/notes.api";
@@ -17,7 +18,7 @@ export default function GradesTab() {
   const { selectedChild } = useChild();
   const [trimestre, setTrimestre] = useState(1);
 
-  const { data: notes = [], isLoading, refetch } = useQuery({
+  const { data: notes = [], isLoading, refetch, error } = useQuery({
     queryKey: ["child-notes", selectedChild?.id, trimestre],
     queryFn: () => notesApi.getByStudent(selectedChild!.id, trimestre),
     enabled: !!selectedChild?.id,
@@ -65,6 +66,10 @@ export default function GradesTab() {
       count: m.count,
     })).sort((a, b) => b.average - a.average);
   }, [notes]);
+
+  if (error) {
+    return <ErrorView message={(error as Error).message} onRetry={() => refetch()} />;
+  }
 
   return (
     <ScrollView

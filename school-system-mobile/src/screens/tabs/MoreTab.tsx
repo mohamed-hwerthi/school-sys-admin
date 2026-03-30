@@ -1,4 +1,5 @@
-import { View, Text, ScrollView, TouchableOpacity, Alert } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, Alert, RefreshControl } from "react-native";
+import { useState, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useNavigation } from "@react-navigation/native";
 import { colors, spacing, fontSize, borderRadius } from "@/constants/theme";
@@ -6,6 +7,13 @@ import { colors, spacing, fontSize, borderRadius } from "@/constants/theme";
 export default function MoreTab() {
   const { user, logout } = useAuth();
   const navigation = useNavigation<any>();
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    // MoreTab is mostly static, but we briefly show the indicator for UX consistency
+    setTimeout(() => setRefreshing(false), 500);
+  }, []);
 
   const handleLogout = () => {
     Alert.alert("Deconnexion", "Etes-vous sur de vouloir vous deconnecter ?", [
@@ -15,22 +23,32 @@ export default function MoreTab() {
   };
 
   const menuItems = [
-    { icon: "👤", label: "Mon profil", onPress: () => {} },
-    { icon: "🔔", label: "Notifications", onPress: () => navigation.navigate("Notifications") },
-    { icon: "💳", label: "Paiements", onPress: () => navigation.navigate("PaymentHistory") },
-    { icon: "📋", label: "Absences", onPress: () => navigation.navigate("Absences") },
-    { icon: "⚠️", label: "Discipline", onPress: () => navigation.navigate("Discipline") },
-    { icon: "📚", label: "Devoirs", onPress: () => navigation.navigate("Homework") },
-    { icon: "📖", label: "Ressources", onPress: () => navigation.navigate("Resources") },
-    { icon: "🔒", label: "Securite & 2FA", onPress: () => {} },
-    { icon: "🌙", label: "Theme sombre", onPress: () => {} },
-    { icon: "🌐", label: "Langue", onPress: () => {} },
-    { icon: "❓", label: "Aide & Support", onPress: () => {} },
-    { icon: "📝", label: "Conditions d'utilisation", onPress: () => {} },
+    { icon: "\uD83D\uDC64", label: "Mon profil", onPress: () => {} },
+    { icon: "\uD83D\uDD14", label: "Notifications", onPress: () => navigation.navigate("Notifications") },
+    { icon: "\uD83D\uDCB3", label: "Paiements", onPress: () => navigation.navigate("PaymentHistory") },
+    { icon: "\uD83D\uDCCB", label: "Absences", onPress: () => navigation.navigate("Absences") },
+    { icon: "\u26A0\uFE0F", label: "Discipline", onPress: () => navigation.navigate("Discipline") },
+    { icon: "\uD83D\uDCDA", label: "Devoirs", onPress: () => navigation.navigate("Homework") },
+    { icon: "\uD83D\uDCD6", label: "Ressources", onPress: () => navigation.navigate("Resources") },
+    { icon: "\uD83D\uDCC4", label: "Bulletins", onPress: () => navigation.navigate("Bulletin") },
+    { icon: "\uD83C\uDFAF", label: "Quiz", onPress: () => navigation.navigate("QuizList") },
+    { icon: "\uD83C\uDF7D\uFE0F", label: "Cantine", onPress: () => navigation.navigate("Cantine") },
+    { icon: "\uD83D\uDE8C", label: "Transport", onPress: () => navigation.navigate("Transport") },
+    { icon: "\uD83D\uDD12", label: "Securite & 2FA", onPress: () => {} },
+    { icon: "\uD83C\uDF19", label: "Theme sombre", onPress: () => {} },
+    { icon: "\uD83C\uDF10", label: "Langue", onPress: () => {} },
+    { icon: "\u2753", label: "Aide & Support", onPress: () => {} },
+    { icon: "\uD83D\uDCDD", label: "Conditions d'utilisation", onPress: () => {} },
   ];
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: colors.background }} contentContainerStyle={{ padding: spacing.lg }}>
+    <ScrollView
+      style={{ flex: 1, backgroundColor: colors.background }}
+      contentContainerStyle={{ padding: spacing.lg }}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
+      }
+    >
       {/* Profile card */}
       <View style={{
         backgroundColor: colors.primary, borderRadius: borderRadius.xl, padding: spacing.xl,
@@ -63,7 +81,7 @@ export default function MoreTab() {
         >
           <Text style={{ fontSize: 20, marginRight: spacing.md }}>{item.icon}</Text>
           <Text style={{ fontSize: fontSize.md, fontWeight: "500", color: colors.text, flex: 1 }}>{item.label}</Text>
-          <Text style={{ fontSize: fontSize.md, color: colors.textMuted }}>›</Text>
+          <Text style={{ fontSize: fontSize.md, color: colors.textMuted }}>{"\u203A"}</Text>
         </TouchableOpacity>
       ))}
 

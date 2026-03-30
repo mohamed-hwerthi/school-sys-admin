@@ -3,6 +3,7 @@ import { useState, useCallback, useMemo } from "react";
 import { useChild } from "@/context/ChildContext";
 import { ChildSelector } from "@/components/ChildSelector";
 import { EmptyState } from "@/components/EmptyState";
+import { ErrorView } from "@/components/ErrorView";
 import { colors, spacing, fontSize, borderRadius } from "@/constants/theme";
 import { useQuery } from "@tanstack/react-query";
 import { emploiDuTempsApi } from "@/api/emploi-du-temps.api";
@@ -35,18 +36,20 @@ export default function TimetableTab() {
   const classeId = selectedChild?.classeId;
 
   // Fetch timetable entries
-  const { data: entries = [], isLoading: entriesLoading, refetch: refetchEntries } = useQuery({
+  const { data: entries = [], isLoading: entriesLoading, refetch: refetchEntries, error: entriesError } = useQuery({
     queryKey: ["timetable-entries", classeId],
     queryFn: () => emploiDuTempsApi.getByClasse(classeId!),
     enabled: !!classeId,
   });
 
   // Fetch creneaux (time slots)
-  const { data: creneaux = [], isLoading: creneauxLoading, refetch: refetchCreneaux } = useQuery({
+  const { data: creneaux = [], isLoading: creneauxLoading, refetch: refetchCreneaux, error: creneauxError } = useQuery({
     queryKey: ["creneaux"],
     queryFn: emploiDuTempsApi.getCreneaux,
     enabled: !!classeId,
   });
+
+  const dataError = entriesError || creneauxError;
 
   // Fetch remplacements
   const { data: remplacements = [], refetch: refetchRemplacements } = useQuery({
@@ -98,6 +101,18 @@ export default function TimetableTab() {
   const activeRemplacements = remplacements.filter((r: any) => {
     return r.dateDebut <= today && r.dateFin >= today;
   });
+
+  if (dataError) {
+    return (
+      <ErrorView
+        message={(dataError as Error).message}
+        onRetry={() => {
+          refetchEntries();
+          refetchCreneaux();
+        }}
+      />
+    );
+  }
 
   return (
     <ScrollView

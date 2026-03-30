@@ -27,7 +27,9 @@ import QuizDetailScreen from "@/screens/QuizDetailScreen";
 import QuizPassationScreen from "@/screens/QuizPassationScreen";
 import CantineScreen from "@/screens/CantineScreen";
 import TransportScreen from "@/screens/TransportScreen";
+import BulletinScreen from "@/screens/BulletinScreen";
 import { colors } from "@/constants/theme";
+import type { RootStackParamList } from "@/types/navigation";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -36,7 +38,7 @@ const queryClient = new QueryClient({
 });
 
 const Tab = createBottomTabNavigator();
-const Stack = createNativeStackNavigator();
+const Stack = createNativeStackNavigator<RootStackParamList>();
 
 function TabIcon({ label, focused }: { label: string; focused: boolean }) {
   const icons: Record<string, string> = {
@@ -147,6 +149,11 @@ function MainStack() {
       <Stack.Screen
         name="Transport"
         component={TransportScreen}
+        options={{ animation: "slide_from_right" }}
+      />
+      <Stack.Screen
+        name="Bulletin"
+        component={BulletinScreen}
         options={{ animation: "slide_from_right" }}
       />
     </Stack.Navigator>

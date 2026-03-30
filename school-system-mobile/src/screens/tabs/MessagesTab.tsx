@@ -16,6 +16,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { messagesApi } from "@/api/messages.api";
 import { EmptyState } from "@/components/EmptyState";
+import { ErrorView } from "@/components/ErrorView";
 import { colors, spacing, fontSize, borderRadius } from "@/constants/theme";
 
 interface Message {
@@ -67,6 +68,7 @@ export default function MessagesTab() {
     isLoading,
     refetch,
     isRefetching,
+    error,
   } = useQuery({
     queryKey: ["inbox", user?.id],
     queryFn: () => messagesApi.getInbox(user!.id),
@@ -132,6 +134,10 @@ export default function MessagesTab() {
   }, [composeRecipient, composeSubject, composeBody, sendMutation]);
 
   const unreadCount = messages.filter((m: Message) => !m.read).length;
+
+  if (error) {
+    return <ErrorView message={(error as Error).message} onRetry={() => refetch()} />;
+  }
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>

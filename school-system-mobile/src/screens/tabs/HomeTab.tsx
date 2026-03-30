@@ -6,6 +6,7 @@ import { useNavigation } from "@react-navigation/native";
 import { ChildSelector } from "@/components/ChildSelector";
 import { StatCard } from "@/components/StatCard";
 import { EmptyState } from "@/components/EmptyState";
+import { ErrorView } from "@/components/ErrorView";
 import { colors, spacing, fontSize, borderRadius } from "@/constants/theme";
 import { useQuery } from "@tanstack/react-query";
 import { notificationsApi } from "@/api/notifications.api";
@@ -24,18 +25,20 @@ export default function HomeTab() {
   });
 
   // Notes for selected child (to compute average)
-  const { data: notes = [], isLoading: notesLoading, refetch: refetchNotes } = useQuery({
+  const { data: notes = [], isLoading: notesLoading, refetch: refetchNotes, error: notesError } = useQuery({
     queryKey: ["child-notes-home", selectedChild?.id],
     queryFn: () => notesApi.getByStudent(selectedChild!.id),
     enabled: !!selectedChild?.id,
   });
 
   // Absences for selected child
-  const { data: absences = [], isLoading: absencesLoading, refetch: refetchAbsences } = useQuery({
+  const { data: absences = [], isLoading: absencesLoading, refetch: refetchAbsences, error: absencesError } = useQuery({
     queryKey: ["child-absences-home", selectedChild?.id],
     queryFn: () => parentPortalApi.getChildAbsences(selectedChild!.id),
     enabled: !!selectedChild?.id,
   });
+
+  const dataError = notesError || absencesError;
 
   const isRefreshing = childrenLoading || notesLoading || absencesLoading;
 
@@ -66,10 +69,22 @@ export default function HomeTab() {
     { icon: "📊", label: "Voir les notes", onPress: () => navigation.navigate("Tabs", { screen: "Notes" }) },
     { icon: "🗓️", label: "Emploi du temps", onPress: () => navigation.navigate("Tabs", { screen: "EDT" }) },
     { icon: "💳", label: "Paiements", onPress: () => navigation.navigate("PaymentHistory") },
-    { icon: "🔔", label: "Notifications", onPress: () => navigation.navigate("Notifications") },
     { icon: "📋", label: "Absences", onPress: () => navigation.navigate("Absences") },
     { icon: "📚", label: "Devoirs", onPress: () => navigation.navigate("Homework") },
+    { icon: "📄", label: "Bulletins", onPress: () => navigation.navigate("Bulletin") },
   ];
+
+  if (dataError && !childrenLoading) {
+    return (
+      <ErrorView
+        message={(dataError as Error).message}
+        onRetry={() => {
+          refetchNotes();
+          refetchAbsences();
+        }}
+      />
+    );
+  }
 
   return (
     <ScrollView

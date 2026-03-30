@@ -1,20 +1,27 @@
-import { View, Text, ScrollView, RefreshControl, ActivityIndicator, TouchableOpacity, Share } from "react-native";
+import { View, Text, ScrollView, RefreshControl, ActivityIndicator, TouchableOpacity } from "react-native";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useChild } from "@/context/ChildContext";
+import { useNavigation } from "@react-navigation/native";
 import { bulletinsApi } from "@/api/bulletins.api";
 import { EmptyState } from "@/components/EmptyState";
+import { ErrorView } from "@/components/ErrorView";
 import { colors, spacing, fontSize, borderRadius } from "@/constants/theme";
 
-export default function BulletinScreen({ onBack }: { onBack: () => void }) {
+export default function BulletinScreen() {
   const { selectedChild } = useChild();
+  const navigation = useNavigation();
   const [trimestre, setTrimestre] = useState(1);
 
-  const { data: bulletin, isLoading, refetch } = useQuery({
+  const { data: bulletin, isLoading, refetch, error } = useQuery({
     queryKey: ["bulletin", selectedChild?.id, selectedChild?.classeId, trimestre],
     queryFn: () => bulletinsApi.getStudentBulletin(selectedChild!.id, selectedChild!.classeId, trimestre),
     enabled: !!selectedChild,
   });
+
+  if (error) {
+    return <ErrorView message={(error as Error).message} onRetry={() => refetch()} />;
+  }
 
   return (
     <ScrollView
@@ -24,7 +31,7 @@ export default function BulletinScreen({ onBack }: { onBack: () => void }) {
     >
       {/* Header */}
       <View style={{ flexDirection: "row", alignItems: "center", marginBottom: spacing.lg }}>
-        <TouchableOpacity onPress={onBack} style={{ marginRight: spacing.md, padding: 4 }}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginRight: spacing.md, padding: 4 }}>
           <Text style={{ fontSize: 24, color: colors.primary }}>←</Text>
         </TouchableOpacity>
         <View style={{ flex: 1 }}>
@@ -106,7 +113,7 @@ export default function BulletinScreen({ onBack }: { onBack: () => void }) {
                     fontSize: fontSize.md, fontWeight: "800",
                     color: (mod.moyenne || mod.note) >= 14 ? colors.success : (mod.moyenne || mod.note) >= 10 ? colors.warning : colors.error,
                   }}>
-                    {mod.moyenne ?? mod.note ?? "—"}/20
+                    {mod.moyenne ?? mod.note ?? "\u2014"}/20
                   </Text>
                 </View>
               </View>
