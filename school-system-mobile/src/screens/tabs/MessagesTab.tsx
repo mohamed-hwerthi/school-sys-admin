@@ -84,7 +84,12 @@ export default function MessagesTab() {
 
   const sendMutation = useMutation({
     mutationFn: (data: { recipientId: number; subject: string; body: string }) =>
-      messagesApi.send(data),
+      messagesApi.send({
+        senderId: user!.id,
+        recipientIds: [data.recipientId],
+        subject: data.subject,
+        body: data.body,
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["inbox", user?.id] });
       setShowCompose(false);
