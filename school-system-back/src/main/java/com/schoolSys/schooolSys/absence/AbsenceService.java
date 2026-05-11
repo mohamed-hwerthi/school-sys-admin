@@ -133,7 +133,6 @@ public class AbsenceService {
             .collect(Collectors.toList());
     }
 
-    @Transactional(readOnly = true)
     public AbsenceStatsDTO getStats(Long classeId, int mois, int annee) {
         List<Long> eleveIds = getEleveIdsByClasse(classeId);
         if (eleveIds.isEmpty()) {
