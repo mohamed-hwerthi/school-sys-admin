@@ -7,6 +7,7 @@ import type {
   RemplacementRequest,
   TimetableGenerateRequest,
   TimetableGenerateResponse,
+  TimetablePreviewCheck,
 } from "@/types/emploi-du-temps";
 
 const BASE = "/emploi-du-temps";
@@ -65,6 +66,14 @@ export const emploiDuTempsApi = {
   // Auto-generation
   generate: async (request: TimetableGenerateRequest): Promise<TimetableGenerateResponse> => {
     const res = await api.post<TimetableGenerateResponse>(`${BASE}/generate`, request);
+    return res.data;
+  },
+
+  previewCheck: async (params?: {
+    niveauId?: number;
+    anneeScolaireId?: number;
+  }): Promise<TimetablePreviewCheck> => {
+    const res = await api.get<TimetablePreviewCheck>(`${BASE}/preview-check`, { params });
     return res.data;
   },
 };

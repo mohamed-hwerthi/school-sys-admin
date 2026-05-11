@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
@@ -18,6 +19,7 @@ import {
   ShieldAlert,
   ShieldCheck,
   Globe,
+  PhoneCall,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -28,6 +30,9 @@ import { StudentProfileSkeleton } from "@/components/skeletons/StudentProfileSke
 import { generateAttestation } from "@/lib/generate-attestation";
 import { PhotoUpload, getStudentPhotoUrl } from "@/components/students/PhotoUpload";
 import { useLanguage } from "@/hooks/useLanguage";
+import WhatsAppButton from "@/components/WhatsAppButton";
+import { CommunicationDialog } from "@/components/finance/CommunicationDialog";
+import { AppelDialog } from "@/components/finance/AppelDialog";
 
 const avatarColors = [
   "bg-emerald-100 text-emerald-700",
@@ -50,6 +55,11 @@ export default function StudentProfile() {
   const navigate = useNavigate();
   const { data: student, isLoading } = useStudent(Number(id));
   const { school } = useSchool();
+
+  // Contact dialogs state
+  const [smsOpen, setSmsOpen] = useState(false);
+  const [emailOpen, setEmailOpen] = useState(false);
+  const [appelOpen, setAppelOpen] = useState(false);
 
   if (isLoading) return <StudentProfileSkeleton />;
 
@@ -297,21 +307,72 @@ export default function StudentProfile() {
               />
             )}
             {student.telephoneParent && (
-              <InfoRow
-                label="Téléphone"
-                value={student.telephoneParent}
-                icon={<Phone className="h-3.5 w-3.5 text-muted-foreground" />}
-              />
+              <div className="flex items-center justify-between gap-2 py-1">
+                <div className="flex items-center gap-2 min-w-0">
+                  <Phone className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                  <span className="text-xs text-muted-foreground">Téléphone</span>
+                  <a
+                    href={`tel:${student.telephoneParent}`}
+                    className="text-sm font-medium text-foreground hover:text-primary truncate"
+                  >
+                    {student.telephoneParent}
+                  </a>
+                </div>
+                <WhatsAppButton phone={student.telephoneParent} className="h-7 w-7 shrink-0" size={16} />
+              </div>
             )}
             {student.emailParent && (
-              <InfoRow
-                label="Email"
-                value={student.emailParent}
-                icon={<Mail className="h-3.5 w-3.5 text-muted-foreground" />}
-              />
+              <div className="flex items-center gap-2 py-1">
+                <Mail className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                <span className="text-xs text-muted-foreground">Email</span>
+                <a
+                  href={`mailto:${student.emailParent}`}
+                  className="text-sm font-medium text-foreground hover:text-primary truncate"
+                >
+                  {student.emailParent}
+                </a>
+              </div>
             )}
             {!student.nomParent && !student.prenomParent && !student.telephoneParent && !student.emailParent && (
               <p className="text-xs text-muted-foreground italic">Aucune information parent renseignée</p>
+            )}
+
+            {(student.telephoneParent || student.emailParent) && (
+              <div className="pt-3 border-t border-border/40 flex flex-wrap gap-2">
+                {student.telephoneParent && (
+                  <>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-8 gap-1.5"
+                      onClick={() => setSmsOpen(true)}
+                    >
+                      <MessageSquare className="h-3.5 w-3.5" />
+                      SMS
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-8 gap-1.5"
+                      onClick={() => setAppelOpen(true)}
+                    >
+                      <PhoneCall className="h-3.5 w-3.5" />
+                      Enregistrer un appel
+                    </Button>
+                  </>
+                )}
+                {student.emailParent && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-8 gap-1.5"
+                    onClick={() => setEmailOpen(true)}
+                  >
+                    <Mail className="h-3.5 w-3.5" />
+                    Email
+                  </Button>
+                )}
+              </div>
             )}
           </div>
         </motion.div>
@@ -332,6 +393,23 @@ export default function StudentProfile() {
           <p className="text-sm text-muted-foreground leading-relaxed">{student.notes}</p>
         </motion.div>
       )}
+
+      {/* ── Contact dialogs ─────────────────────────────── */}
+      <CommunicationDialog
+        open={smsOpen}
+        onOpenChange={setSmsOpen}
+        student={student}
+        type="SMS"
+        solde={0}
+      />
+      <CommunicationDialog
+        open={emailOpen}
+        onOpenChange={setEmailOpen}
+        student={student}
+        type="Email"
+        solde={0}
+      />
+      <AppelDialog open={appelOpen} onOpenChange={setAppelOpen} student={student} />
     </div>
   );
 }

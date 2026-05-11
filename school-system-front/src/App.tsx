@@ -21,12 +21,14 @@ import { Loader2 } from "lucide-react";
 
 // Lazy loaded pages for code splitting
 const Dashboard = lazy(() => import("./pages/Dashboard"));
+const DashboardByRole = lazy(() => import("./pages/DashboardByRole"));
 const Students = lazy(() => import("./pages/Students"));
 const AddStudent = lazy(() => import("./pages/AddStudent"));
 const EditStudent = lazy(() => import("./pages/EditStudent"));
 const StudentProfile = lazy(() => import("./pages/StudentProfile"));
 const StudentMessages = lazy(() => import("./pages/StudentMessages"));
 const Teachers = lazy(() => import("./pages/Teachers"));
+const Affectations = lazy(() => import("./pages/Affectations"));
 const AddTeacher = lazy(() => import("./pages/AddTeacher"));
 const EditTeacher = lazy(() => import("./pages/EditTeacher"));
 const EmploiSalles = lazy(() => import("./pages/EmploiSalles"));
@@ -55,6 +57,7 @@ const AppelAbsencePage = lazy(() => import("./pages/AppelAbsence"));
 const FeuillesJourPage = lazy(() => import("./pages/FeuillesJour"));
 const FeuilleDetailsPage = lazy(() => import("./pages/FeuilleDetails"));
 const EmploiDuTempsPage = lazy(() => import("./pages/EmploiDuTemps"));
+const VolumeHorairePage = lazy(() => import("./pages/VolumeHoraire"));
 const DisciplinePage = lazy(() => import("./pages/Discipline"));
 const AnneeScolairePage = lazy(() => import("./pages/AnneeScolaire"));
 const ContratsPage = lazy(() => import("./pages/Contrats"));
@@ -95,7 +98,6 @@ const QuizManagementPage = lazy(() => import("./pages/QuizManagement"));
 const QuizPassationPage = lazy(() => import("./pages/QuizPassation"));
 
 // Board 19: RH
-const PointagePage = lazy(() => import("./pages/Pointage"));
 const PaiePage = lazy(() => import("./pages/Paie"));
 const FormationsPage = lazy(() => import("./pages/Formations"));
 const TeacherEvaluationsPage = lazy(() => import("./pages/TeacherEvaluations"));
@@ -184,7 +186,7 @@ const App = () => (
                 </PrivateRoute>
               }
             >
-              <Route index element={<S><Dashboard /></S>} />
+              <Route index element={<S><DashboardByRole /></S>} />
 
               {/* Élèves — all staff + comptable can view */}
               <Route path="eleves" element={<G roles={[...STAFF_ROLES, "COMPTABLE"]}><Students /></G>} />
@@ -197,6 +199,7 @@ const App = () => (
               <Route path="enseignants" element={<G roles={MANAGEMENT_ROLES}><Teachers /></G>} />
               <Route path="enseignants/ajouter" element={<G roles={MANAGEMENT_ROLES}><AddTeacher /></G>} />
               <Route path="enseignants/modifier/:id" element={<G roles={MANAGEMENT_ROLES}><EditTeacher /></G>} />
+              <Route path="affectations" element={<G roles={MANAGEMENT_ROLES}><Affectations /></G>} />
 
               {/* Absences */}
               <Route path="absences" element={<G roles={STAFF_ROLES}><AbsencesPage /></G>} />
@@ -209,6 +212,7 @@ const App = () => (
 
               {/* Emploi du temps — all authenticated can view */}
               <Route path="emploi-du-temps" element={<S><EmploiDuTempsPage /></S>} />
+              <Route path="volume-horaire" element={<G roles={MANAGEMENT_ROLES}><VolumeHorairePage /></G>} />
               <Route path="emploi-salles" element={<G roles={MANAGEMENT_ROLES}><EmploiSalles /></G>} />
               <Route path="emploi-salles/ajouter" element={<G roles={MANAGEMENT_ROLES}><AddRoom /></G>} />
               <Route path="emploi-salles/modifier/:id" element={<G roles={MANAGEMENT_ROLES}><EditRoom /></G>} />
@@ -262,7 +266,6 @@ const App = () => (
 
               {/* RH & Personnel */}
               <Route path="contrats" element={<G roles={MANAGEMENT_ROLES}><ContratsPage /></G>} />
-              <Route path="rh/pointage" element={<G roles={MANAGEMENT_ROLES}><PointagePage /></G>} />
               <Route path="rh/paie" element={<G roles={MANAGEMENT_ROLES}><PaiePage /></G>} />
               <Route path="rh/formations" element={<G roles={MANAGEMENT_ROLES}><FormationsPage /></G>} />
               <Route path="teacher-evaluations" element={<G roles={MANAGEMENT_ROLES}><TeacherEvaluationsPage /></G>} />

@@ -302,7 +302,7 @@ export default function ExamensTab() {
             disabled={!filterNiveauId}
           >
             <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Module" />
+              <SelectValue placeholder="Matière" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="0">Tous</SelectItem>
@@ -642,7 +642,7 @@ export default function ExamensTab() {
                 </Select>
               </div>
               <div>
-                <Label>Module *</Label>
+                <Label>Matière *</Label>
                 <Select
                   value={form.moduleId ? String(form.moduleId) : ""}
                   onValueChange={(v) =>
@@ -651,7 +651,7 @@ export default function ExamensTab() {
                   disabled={!formNiveauId}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Module" />
+                    <SelectValue placeholder="Matière" />
                   </SelectTrigger>
                   <SelectContent>
                     {formModules.map((m) => (

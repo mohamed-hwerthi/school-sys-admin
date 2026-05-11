@@ -9,6 +9,20 @@ export interface AuthUser {
   tenantId: string;
   tenantSlug?: string;
   isActive: boolean;
+  /** Granted permissions (populated by /auth/me; empty for cached login response). */
+  permissions?: string[];
+  /** Class IDs the user can see — for ENSEIGNANT row-level scoping. */
+  scopedClasseIds?: number[];
+  /** Student IDs the user can see — for PARENT row-level scoping. */
+  scopedStudentIds?: number[];
+}
+
+/** Raw shape returned by GET /api/auth/me (data field of ApiResponse). */
+export interface MeResponse {
+  user: Omit<AuthUser, "permissions" | "scopedClasseIds" | "scopedStudentIds">;
+  permissions: string[];
+  scopedClasseIds: number[];
+  scopedStudentIds: number[];
 }
 
 export interface LoginRequest {

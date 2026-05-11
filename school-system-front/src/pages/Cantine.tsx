@@ -776,6 +776,8 @@ function PointageTab() {
   const today = new Date().toISOString().split("T")[0];
   const [selectedDate, setSelectedDate] = useState(today);
   const [selectedType, setSelectedType] = useState("DEJEUNER");
+  const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(25);
 
   const { data: pointages = [], isLoading } = usePointagesRepas(selectedDate, selectedType);
   const { data: abonnementsActifs = [] } = useAbonnementsCantine();
@@ -811,6 +813,14 @@ function PointageTab() {
     });
   }, [abonnementsActifs]);
 
+  // Pagination
+  const totalCount = subscribedStudents.length;
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+  const safePage = Math.min(page, totalPages - 1);
+  const pageStart = safePage * pageSize;
+  const pageEnd = Math.min(pageStart + pageSize, totalCount);
+  const paginatedStudents = subscribedStudents.slice(pageStart, pageEnd);
+
   const togglePresence = (eleveId: number) => {
     setLocalPointages((prev) => ({
       ...prev,
@@ -836,10 +846,10 @@ function PointageTab() {
         <Input
           type="date"
           value={selectedDate}
-          onChange={(e) => { setSelectedDate(e.target.value); setLocalPointages({}); }}
+          onChange={(e) => { setSelectedDate(e.target.value); setLocalPointages({}); setPage(0); }}
           className="w-[180px]"
         />
-        <Select value={selectedType} onValueChange={setSelectedType}>
+        <Select value={selectedType} onValueChange={(v) => { setSelectedType(v); setPage(0); }}>
           <SelectTrigger className="w-[180px]">
             <SelectValue />
           </SelectTrigger>
@@ -878,7 +888,7 @@ function PointageTab() {
                 </tr>
               </thead>
               <tbody>
-                {subscribedStudents.map((a) => (
+                {paginatedStudents.map((a) => (
                   <tr key={a.eleveId} className="border-b border-border/50 last:border-0 hover:bg-muted/20 transition-colors">
                     <td className="py-3 px-4 font-medium text-foreground">{studentLabel(a.eleveId)}</td>
                     <td className="py-3 px-4">
@@ -902,10 +912,66 @@ function PointageTab() {
               </tbody>
             </table>
           </div>
-          <div className="border-t border-border px-4 py-3 text-xs text-muted-foreground">
-            {subscribedStudents.length} eleve{subscribedStudents.length !== 1 ? "s" : ""} abonne{subscribedStudents.length !== 1 ? "s" : ""}
-            {" - "}
-            {Object.values(pointageMap).filter(Boolean).length} present{Object.values(pointageMap).filter(Boolean).length !== 1 ? "s" : ""}
+          <div className="border-t border-border px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-3 text-xs text-muted-foreground">
+            <div>
+              {totalCount === 0 ? (
+                <>0 élève abonné</>
+              ) : (
+                <>
+                  Affichage de <span className="font-semibold text-foreground tabular-nums">{pageStart + 1}</span> à{" "}
+                  <span className="font-semibold text-foreground tabular-nums">{pageEnd}</span> sur{" "}
+                  <span className="font-semibold text-foreground tabular-nums">{totalCount}</span> élève{totalCount !== 1 ? "s" : ""}
+                  {" — "}
+                  <span className="font-semibold text-emerald-600 tabular-nums">
+                    {Object.values(pointageMap).filter(Boolean).length}
+                  </span>{" "}
+                  présent{Object.values(pointageMap).filter(Boolean).length !== 1 ? "s" : ""}
+                </>
+              )}
+            </div>
+            <div className="sm:ms-auto flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                <span>Lignes par page</span>
+                <Select
+                  value={String(pageSize)}
+                  onValueChange={(v) => { setPageSize(Number(v)); setPage(0); }}
+                >
+                  <SelectTrigger className="h-8 w-[72px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {[10, 25, 50, 100].map((n) => (
+                      <SelectItem key={n} value={String(n)}>{n}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => setPage(safePage - 1)}
+                  disabled={safePage <= 0}
+                  aria-label="Page précédente"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <span className="px-2 tabular-nums">
+                  Page <span className="font-semibold text-foreground">{safePage + 1}</span> / {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => setPage(safePage + 1)}
+                  disabled={safePage >= totalPages - 1}
+                  aria-label="Page suivante"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
           </div>
         </motion.div>
       )}

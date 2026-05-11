@@ -16,7 +16,7 @@ vi.mock("@/hooks/useReporting", () => ({
 }));
 
 vi.mock("@/config/currency", () => ({
-  CURRENCY: "MAD",
+  CURRENCY: "TND",
 }));
 
 // Mock framer-motion to avoid animation issues in tests
@@ -164,6 +164,6 @@ describe("Dashboard", () => {
     expect(screen.getByText("500")).toBeInTheDocument();
     expect(screen.getByText("50")).toBeInTheDocument();
     expect(screen.getByText("95.0%")).toBeInTheDocument();
-    expect(screen.getByText("150K MAD")).toBeInTheDocument();
+    expect(screen.getByText("150K TND")).toBeInTheDocument();
   });
 });

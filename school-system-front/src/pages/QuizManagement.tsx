@@ -845,7 +845,7 @@ export default function QuizManagementPage() {
                 </Select>
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="moduleIdQuiz">Module</Label>
+                <Label htmlFor="moduleIdQuiz">Matière</Label>
                 <Select
                   value={quizForm.moduleId ? String(quizForm.moduleId) : "none"}
                   onValueChange={(v) => setQuizForm({ ...quizForm, moduleId: v === "none" ? undefined : Number(v) })}

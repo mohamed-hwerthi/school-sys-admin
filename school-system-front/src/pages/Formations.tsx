@@ -52,6 +52,8 @@ import {
   useAddParticipant,
   useRemoveParticipant,
 } from "@/hooks/useRh";
+import { useTeachers } from "@/hooks/useTeachers";
+import { useAllUsers } from "@/hooks/useUsers";
 import type {
   Formation,
   CreateFormationRequest,
@@ -108,7 +110,7 @@ export default function FormationsPage() {
 
   // Participant form
   const [participantDialogOpen, setParticipantDialogOpen] = useState(false);
-  const [selectedFormation, setSelectedFormation] = useState<Formation | null>(
+  const [selectedFormationId, setSelectedFormationId] = useState<number | null>(
     null
   );
   const [participantForm, setParticipantForm] = useState<AddParticipantRequest>(
@@ -128,6 +130,41 @@ export default function FormationsPage() {
   const deleteMutation = useDeleteFormation();
   const addParticipantMutation = useAddParticipant();
   const removeParticipantMutation = useRemoveParticipant();
+
+  // Live lookup so the modal reflects mutations (add/remove participant)
+  const selectedFormation = useMemo(
+    () => formations.find((f) => f.id === selectedFormationId) ?? null,
+    [formations, selectedFormationId]
+  );
+
+  // Backing data for the participant employé selector
+  const { teachers } = useTeachers();
+  const { data: allUsers = [] } = useAllUsers();
+
+  // Candidates depend on the chosen employeType
+  const employeCandidates = useMemo(() => {
+    if (participantForm.employeType === "ENSEIGNANT") {
+      return teachers.map((t) => ({
+        id: t.id,
+        label: `${t.prenom} ${t.nom}${t.specialite ? ` — ${t.specialite}` : ""}`,
+      }));
+    }
+    if (participantForm.employeType === "ADMIN") {
+      return allUsers
+        .filter((u) => ["SUPER_ADMIN", "ADMIN", "DIRECTEUR"].includes(u.role))
+        .map((u) => ({
+          id: u.id,
+          label: `${u.firstName} ${u.lastName} — ${u.role}`,
+        }));
+    }
+    // PERSONNEL: comptables for now
+    return allUsers
+      .filter((u) => u.role === "COMPTABLE")
+      .map((u) => ({
+        id: u.id,
+        label: `${u.firstName} ${u.lastName} — ${u.role}`,
+      }));
+  }, [participantForm.employeType, teachers, allUsers]);
 
   const filtered = useMemo(() => {
     let list = formations;
@@ -219,7 +256,7 @@ export default function FormationsPage() {
   };
 
   const openParticipantDialog = (f: Formation) => {
-    setSelectedFormation(f);
+    setSelectedFormationId(f.id);
     setParticipantForm({
       employeId: 0,
       employeType: "ENSEIGNANT",
@@ -745,7 +782,10 @@ export default function FormationsPage() {
       {/* Participants Dialog */}
       <Dialog
         open={participantDialogOpen}
-        onOpenChange={setParticipantDialogOpen}
+        onOpenChange={(o) => {
+          setParticipantDialogOpen(o);
+          if (!o) setSelectedFormationId(null);
+        }}
       >
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
@@ -816,21 +856,6 @@ export default function FormationsPage() {
               </Label>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <Label htmlFor="partEmployeId">ID Employe</Label>
-                  <Input
-                    id="partEmployeId"
-                    type="number"
-                    value={participantForm.employeId || ""}
-                    onChange={(e) =>
-                      setParticipantForm({
-                        ...participantForm,
-                        employeId: Number(e.target.value),
-                      })
-                    }
-                    placeholder="ID"
-                  />
-                </div>
-                <div className="space-y-1.5">
                   <Label>Type</Label>
                   <Select
                     value={participantForm.employeType}
@@ -838,6 +863,7 @@ export default function FormationsPage() {
                       setParticipantForm({
                         ...participantForm,
                         employeType: v,
+                        employeId: 0, // reset selected employé when type changes
                       })
                     }
                   >
@@ -848,6 +874,36 @@ export default function FormationsPage() {
                       <SelectItem value="ENSEIGNANT">{t("attendance.employeeTypes.teacher")}</SelectItem>
                       <SelectItem value="ADMIN">{t("attendance.employeeTypes.admin")}</SelectItem>
                       <SelectItem value="PERSONNEL">{t("attendance.employeeTypes.staff")}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="partEmployeId">Employé</Label>
+                  <Select
+                    value={participantForm.employeId ? String(participantForm.employeId) : ""}
+                    onValueChange={(v) =>
+                      setParticipantForm({
+                        ...participantForm,
+                        employeId: Number(v),
+                      })
+                    }
+                    disabled={employeCandidates.length === 0}
+                  >
+                    <SelectTrigger id="partEmployeId">
+                      <SelectValue
+                        placeholder={
+                          employeCandidates.length === 0
+                            ? "Aucun employé disponible"
+                            : "Sélectionner…"
+                        }
+                      />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {employeCandidates.map((c) => (
+                        <SelectItem key={c.id} value={String(c.id)}>
+                          {c.label}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>

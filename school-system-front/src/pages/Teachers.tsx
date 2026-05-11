@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useLanguage } from "@/hooks/useLanguage";
+import { PermissionGate } from "@/components/auth/Gates";
 import {
   Users,
   UserPlus,
@@ -10,6 +11,7 @@ import {
   Edit,
   Trash2,
   Eye,
+  Calendar,
   Upload,
   ChevronLeft,
   ChevronRight,
@@ -49,6 +51,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useTeachers } from "@/hooks/useTeachers";
 import { TeachersListSkeleton } from "@/components/skeletons/TeachersListSkeleton";
 import { ExcelImportDialog } from "@/components/teachers/ExcelImportDialog";
+import DisponibiliteGrid from "@/components/teachers/DisponibiliteGrid";
 import { SPECIALITES, STATUTS_ENSEIGNANT } from "@/types/teacher";
 import type { Teacher } from "@/types/teacher";
 import ExportButton from "@/components/ExportButton";
@@ -83,6 +86,7 @@ export default function Teachers() {
   const [viewTeacher, setViewTeacher] = useState<Teacher | null>(null);
   const [deleteTeacherTarget, setDeleteTeacherTarget] = useState<Teacher | null>(null);
   const [importOpen, setImportOpen] = useState(false);
+  const [dispoTeacher, setDispoTeacher] = useState<Teacher | null>(null);
 
   // ─── Derived data ─────────────────────────────────────
   const filtered = useMemo(() => {
@@ -169,23 +173,25 @@ export default function Teachers() {
         </div>
         <div className="flex items-center gap-2">
           <ExportButton type="teachers" label={t("common.export")} />
-          <Button
-            variant="outline"
-            size="sm"
-            className="gap-1.5"
-            onClick={() => setImportOpen(true)}
-          >
-            <Upload className="h-4 w-4" />
-            {t("common.import")}
-          </Button>
-          <Button
-            size="sm"
-            className="gap-1.5 bg-gradient-primary shadow-btn"
-            onClick={() => navigate("/dashboard/enseignants/ajouter")}
-          >
-            <UserPlus className="h-4 w-4" />
-            {t("teachers.addTeacher")}
-          </Button>
+          <PermissionGate perms={["WRITE_TEACHERS"]}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5"
+              onClick={() => setImportOpen(true)}
+            >
+              <Upload className="h-4 w-4" />
+              {t("common.import")}
+            </Button>
+            <Button
+              size="sm"
+              className="gap-1.5 bg-gradient-primary shadow-btn"
+              onClick={() => navigate("/dashboard/enseignants/ajouter")}
+            >
+              <UserPlus className="h-4 w-4" />
+              {t("teachers.addTeacher")}
+            </Button>
+          </PermissionGate>
         </div>
       </motion.div>
 
@@ -321,17 +327,30 @@ export default function Teachers() {
                         <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-blue-600" onClick={() => setViewTeacher(teacher)}>
                           <Eye className="h-4 w-4" />
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-muted-foreground hover:text-amber-600"
-                          onClick={() => navigate(`/dashboard/enseignants/modifier/${teacher.id}`)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-red-600" onClick={() => setDeleteTeacherTarget(teacher)}>
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        <PermissionGate perms={["WRITE_TEACHERS"]}>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground hover:text-amber-600"
+                            onClick={() => navigate(`/dashboard/enseignants/modifier/${teacher.id}`)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground hover:text-emerald-600 hidden sm:inline-flex"
+                            onClick={() => setDispoTeacher(teacher)}
+                            title="Disponibilités"
+                          >
+                            <Calendar className="h-4 w-4" />
+                          </Button>
+                        </PermissionGate>
+                        <PermissionGate perms={["DELETE_TEACHERS"]}>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-red-600" onClick={() => setDeleteTeacherTarget(teacher)}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </PermissionGate>
                         {/* Mobile dropdown */}
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -345,6 +364,9 @@ export default function Teachers() {
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => navigate(`/dashboard/enseignants/modifier/${teacher.id}`)}>
                               <Edit className="h-4 w-4 me-2" /> {t("common.edit")}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setDispoTeacher(teacher)}>
+                              <Calendar className="h-4 w-4 me-2" /> Disponibilités
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => setDeleteTeacherTarget(teacher)} className="text-red-600">
                               <Trash2 className="h-4 w-4 me-2" /> {t("common.delete")}
@@ -482,6 +504,16 @@ export default function Teachers() {
         onOpenChange={setImportOpen}
         onImport={importTeachers}
       />
+
+      {/* ─── Disponibilités Dialog ────────────────────── */}
+      {dispoTeacher && (
+        <DisponibiliteGrid
+          open={!!dispoTeacher}
+          onClose={() => setDispoTeacher(null)}
+          enseignantId={dispoTeacher.id}
+          enseignantName={`${dispoTeacher.prenom} ${dispoTeacher.nom}`}
+        />
+      )}
     </div>
   );
 }

@@ -2,6 +2,8 @@ import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useLanguage } from "@/hooks/useLanguage";
+import { PermissionGate } from "@/components/auth/Gates";
+import { ScopedEmptyState } from "@/components/auth/ScopedEmptyState";
 import {
   Users,
   UserPlus,
@@ -48,7 +50,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { useStudentsPaged, useAllStudents, useDeleteStudent, useImportStudents } from "@/hooks/useStudents";
+import { useStudentsPaged, useAllStudents, useDeleteStudent } from "@/hooks/useStudents";
 import { StudentsListSkeleton } from "@/components/skeletons/StudentsListSkeleton";
 import { ExcelImportDialog } from "@/components/students/ExcelImportDialog";
 import { STATUTS } from "@/types/student";
@@ -109,7 +111,6 @@ export default function Students() {
 
   // Mutations
   const deleteMutation = useDeleteStudent();
-  const importMutation = useImportStudents();
 
   const [deleteStudentTarget, setDeleteStudentTarget] = useState<Student | null>(null);
   const [importOpen, setImportOpen] = useState(false);
@@ -162,9 +163,6 @@ export default function Students() {
     });
   };
 
-  const handleImport = (newStudents: Omit<Student, "id" | "dateInscription">[]) => {
-    importMutation.mutate(newStudents);
-  };
 
   const getInitials = (s: Student) => `${s.prenom[0]}${s.nom[0]}`.toUpperCase();
   const getAvatarColor = (id: number) => avatarColors[id % avatarColors.length];
@@ -196,23 +194,25 @@ export default function Students() {
         </div>
         <div className="flex items-center gap-2">
           <ExportButton type="students" label={t("common.export")} />
-          <Button
-            variant="outline"
-            size="sm"
-            className="gap-1.5"
-            onClick={() => setImportOpen(true)}
-          >
-            <Upload className="h-4 w-4" />
-            {t("common.import")}
-          </Button>
-          <Button
-            size="sm"
-            className="gap-1.5 bg-gradient-primary shadow-btn"
-            onClick={() => navigate("/dashboard/eleves/ajouter")}
-          >
-            <UserPlus className="h-4 w-4" />
-            {t("students.newStudent")}
-          </Button>
+          <PermissionGate perms={["WRITE_STUDENTS"]}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5"
+              onClick={() => setImportOpen(true)}
+            >
+              <Upload className="h-4 w-4" />
+              {t("common.import")}
+            </Button>
+            <Button
+              size="sm"
+              className="gap-1.5 bg-gradient-primary shadow-btn"
+              onClick={() => navigate("/dashboard/eleves/ajouter")}
+            >
+              <UserPlus className="h-4 w-4" />
+              {t("students.newStudent")}
+            </Button>
+          </PermissionGate>
         </div>
       </motion.div>
 
@@ -321,10 +321,11 @@ export default function Students() {
             <tbody>
               {students.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-16 text-center text-muted-foreground">
-                    <Users className="h-10 w-10 mx-auto mb-3 opacity-30" />
-                    <p className="font-medium">{t("students.noStudentFound")}</p>
-                    <p className="text-xs mt-1">{t("common.tryModifyFilters")}</p>
+                  <td colSpan={7}>
+                    <ScopedEmptyState
+                      emptyLabel={t("students.noStudentFound")}
+                      icon={Users}
+                    />
                   </td>
                 </tr>
               ) : (
@@ -374,17 +375,21 @@ export default function Students() {
                         <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-blue-600" onClick={() => navigate(`/dashboard/eleves/${student.id}`)}>
                           <Eye className="h-4 w-4" />
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-muted-foreground hover:text-amber-600"
-                          onClick={() => navigate(`/dashboard/eleves/modifier/${student.id}`)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-red-600" onClick={() => setDeleteStudentTarget(student)}>
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        <PermissionGate perms={["WRITE_STUDENTS"]}>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground hover:text-amber-600"
+                            onClick={() => navigate(`/dashboard/eleves/modifier/${student.id}`)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                        </PermissionGate>
+                        <PermissionGate perms={["DELETE_STUDENTS"]}>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-red-600" onClick={() => setDeleteStudentTarget(student)}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </PermissionGate>
                       </div>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -493,11 +498,10 @@ export default function Students() {
         </DialogContent>
       </Dialog>
 
-      {/* Excel Import Dialog */}
+      {/* Excel Import Dialog — uses the async wizard internally */}
       <ExcelImportDialog
         open={importOpen}
         onOpenChange={setImportOpen}
-        onImport={handleImport}
       />
     </div>
   );

@@ -10,6 +10,7 @@ import {
   X,
   Clock,
   Wand2,
+  Sparkles,
   Trash2,
   CheckCircle2,
 } from "lucide-react";
@@ -46,6 +47,7 @@ import { useTeachers } from "@/hooks/useTeachers";
 import { useModules } from "@/hooks/useModules";
 import type { EmploiDuTempsEntry, Creneau, Conflit, TeachingAssignment, TimetableGenerateResponse } from "@/types/emploi-du-temps";
 import { useRooms } from "@/hooks/useRooms";
+import GenerationWizard from "@/components/emploi-du-temps/GenerationWizard";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
@@ -99,6 +101,7 @@ export default function EmploiDuTempsPage() {
 
   // Generation state
   const [generateDialogOpen, setGenerateDialogOpen] = useState(false);
+  const [wizardOpen, setWizardOpen] = useState(false);
   const [assignments, setAssignments] = useState<TeachingAssignment[]>([]);
   const [newAssignment, setNewAssignment] = useState<TeachingAssignment>({
     classeId: 0, moduleId: 0, enseignantId: 0, nbHeures: 1,
@@ -287,6 +290,14 @@ export default function EmploiDuTempsPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <Button
+            size="sm"
+            className="gap-1.5 bg-gradient-primary shadow-btn"
+            onClick={() => setWizardOpen(true)}
+          >
+            <Sparkles className="h-4 w-4" />
+            Générer auto
+          </Button>
           <Button
             variant="outline"
             size="sm"
@@ -764,7 +775,7 @@ export default function EmploiDuTempsPage() {
                       onValueChange={(v) => setNewAssignment({ ...newAssignment, moduleId: Number(v) })}
                     >
                       <SelectTrigger className="h-9 text-xs">
-                        <SelectValue placeholder="Module" />
+                        <SelectValue placeholder="Matière" />
                       </SelectTrigger>
                       <SelectContent>
                         {modules.map((m) => (
@@ -905,6 +916,8 @@ export default function EmploiDuTempsPage() {
           )}
         </DialogContent>
       </Dialog>
+
+      <GenerationWizard open={wizardOpen} onClose={() => setWizardOpen(false)} />
     </div>
   );
 }

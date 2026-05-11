@@ -7,6 +7,8 @@ import {
   FileText,
   Clock,
   GraduationCap,
+  Receipt,
+  TrendingUp,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -44,8 +46,10 @@ import {
   useChildBulletin,
   useChildEmploiDuTemps,
 } from "@/hooks/useParentPortal";
+import { useFacturesByEleve } from "@/hooks/useFactures";
 import type { Child } from "@/types/notification";
 import { useLanguage } from "@/hooks/useLanguage";
+import { CURRENCY } from "@/config/currency";
 
 const JOURS = ["", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
 
@@ -422,6 +426,124 @@ function EmploiDuTempsTab({ studentId }: { studentId: number }) {
   );
 }
 
+function fmtMoney(n: number | null | undefined): string {
+  return (n ?? 0).toLocaleString("fr-FR", { minimumFractionDigits: 0 }) + ` ${CURRENCY}`;
+}
+
+function KpiHeader({ studentId }: { studentId: number }) {
+  const { data: notes = [] } = useChildNotes(studentId, 1);
+  const { data: absences = [] } = useChildAbsences(studentId);
+  const { data: factures = [] } = useFacturesByEleve(studentId);
+
+  const moyenne = notes.length > 0
+    ? notes.reduce((s, n) => s + (Number(n.valeur) || 0), 0) / notes.length
+    : null;
+  const absCount = absences.filter((a) => a.type === "ABSENCE").length;
+  const impayes = factures.filter((f) => f.statut === "NON_PAYEE" || f.statut === "PARTIELLEMENT_PAYEE");
+  const totalImpaye = impayes.reduce((s, f) => s + (Number(f.montantNet) || Number(f.montantTotal) || 0), 0);
+
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <Card>
+        <CardContent className="pt-4 text-center">
+          <TrendingUp className="h-5 w-5 mx-auto mb-1 text-emerald-600" />
+          <p className="text-xl font-bold">{moyenne != null ? moyenne.toFixed(2) : "—"}</p>
+          <p className="text-[11px] text-muted-foreground">Moyenne T1</p>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardContent className="pt-4 text-center">
+          <UserX className="h-5 w-5 mx-auto mb-1 text-red-600" />
+          <p className="text-xl font-bold">{absCount}</p>
+          <p className="text-[11px] text-muted-foreground">Absences</p>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardContent className="pt-4 text-center">
+          <Receipt className="h-5 w-5 mx-auto mb-1 text-amber-600" />
+          <p className="text-xl font-bold">{impayes.length}</p>
+          <p className="text-[11px] text-muted-foreground">Factures impayées</p>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardContent className="pt-4 text-center">
+          <Receipt className="h-5 w-5 mx-auto mb-1 text-primary" />
+          <p className="text-base font-bold leading-tight">{fmtMoney(totalImpaye)}</p>
+          <p className="text-[11px] text-muted-foreground">Restant à payer</p>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function FacturesTab({ studentId }: { studentId: number }) {
+  const { data: factures = [], isLoading } = useFacturesByEleve(studentId);
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center py-8">
+        <Loader2 className="h-6 w-6 animate-spin" />
+      </div>
+    );
+  }
+  if (factures.length === 0) {
+    return (
+      <div className="text-center py-8 text-muted-foreground">
+        <Receipt className="mx-auto mb-3 h-10 w-10" />
+        <p>Aucune facture émise.</p>
+      </div>
+    );
+  }
+  return (
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>Numéro</TableHead>
+          <TableHead>Émise le</TableHead>
+          <TableHead>Échéance</TableHead>
+          <TableHead className="text-end">Montant</TableHead>
+          <TableHead className="text-center">Statut</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {factures.map((f) => (
+          <TableRow key={f.id}>
+            <TableCell className="font-mono text-xs">{f.numero}</TableCell>
+            <TableCell className="text-sm text-muted-foreground">
+              {f.dateEmission ? new Date(f.dateEmission).toLocaleDateString("fr-FR") : "—"}
+            </TableCell>
+            <TableCell className="text-sm text-muted-foreground">
+              {f.dateEcheance ? new Date(f.dateEcheance).toLocaleDateString("fr-FR") : "—"}
+            </TableCell>
+            <TableCell className="text-end font-medium">
+              {fmtMoney(f.montantNet ?? f.montantTotal)}
+            </TableCell>
+            <TableCell className="text-center">
+              <Badge
+                variant={
+                  f.statut === "PAYEE"
+                    ? "default"
+                    : f.statut === "ANNULEE"
+                    ? "secondary"
+                    : "destructive"
+                }
+              >
+                {f.statut === "PAYEE"
+                  ? "Payée"
+                  : f.statut === "PARTIELLEMENT_PAYEE"
+                  ? "Partielle"
+                  : f.statut === "ANNULEE"
+                  ? "Annulée"
+                  : "Impayée"}
+              </Badge>
+            </TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
+  );
+}
+
 export default function ParentPortalPage() {
   const { t } = useLanguage();
   const { data: children = [], isLoading } = useChildren();
@@ -477,6 +599,9 @@ export default function ParentPortalPage() {
             />
           </div>
 
+          {/* KPI summary for the selected child */}
+          {selectedChild && <KpiHeader studentId={selectedChild.id} />}
+
           {/* Content tabs */}
           {selectedChild && (
             <Card>
@@ -492,7 +617,7 @@ export default function ParentPortalPage() {
               </CardHeader>
               <CardContent>
                 <Tabs defaultValue="notes" className="w-full">
-                  <TabsList className="grid w-full grid-cols-4">
+                  <TabsList className="grid w-full grid-cols-5">
                     <TabsTrigger value="notes" className="text-xs sm:text-sm">
                       <BookOpen className="me-1 h-3 w-3 sm:h-4 sm:w-4" />
                       Notes
@@ -508,6 +633,10 @@ export default function ParentPortalPage() {
                     <TabsTrigger value="emploi" className="text-xs sm:text-sm">
                       <Clock className="me-1 h-3 w-3 sm:h-4 sm:w-4" />
                       Emploi
+                    </TabsTrigger>
+                    <TabsTrigger value="factures" className="text-xs sm:text-sm">
+                      <Receipt className="me-1 h-3 w-3 sm:h-4 sm:w-4" />
+                      Factures
                     </TabsTrigger>
                   </TabsList>
 
@@ -531,6 +660,10 @@ export default function ParentPortalPage() {
 
                   <TabsContent value="emploi" className="mt-4">
                     <EmploiDuTempsTab studentId={selectedChild.id} />
+                  </TabsContent>
+
+                  <TabsContent value="factures" className="mt-4">
+                    <FacturesTab studentId={selectedChild.id} />
                   </TabsContent>
                 </Tabs>
               </CardContent>

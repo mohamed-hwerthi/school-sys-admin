@@ -66,6 +66,7 @@ import {
   useDeleteConge,
 } from "@/hooks/useContrats";
 import { useTeachers } from "@/hooks/useTeachers";
+import { CURRENCY } from "@/config/currency";
 import type { ContratEnseignant, Conge, TypeContrat, TypeConge, StatutConge } from "@/types/contrat";
 
 const STATUT_CONGE_COLORS: Record<StatutConge, string> = {
@@ -120,7 +121,7 @@ export default function ContratsPage() {
     typeContrat: "CDD" as TypeContrat,
     dateDebut: new Date().toISOString().split("T")[0],
     dateFin: "",
-    salaireBase: 0,
+    salaire: 0,
   });
 
   // Conge form
@@ -202,7 +203,8 @@ export default function ContratsPage() {
 
   const openCreateContrat = () => {
     setEditContrat(null);
-    setContratForm({ enseignantId: 0, typeContrat: "CDD", dateDebut: new Date().toISOString().split("T")[0], dateFin: "", salaireBase: 0 });
+    setContratForm({ enseignantId: 0, typeContrat: "CDD", dateDebut: new Date().toISOString().split("T")[0], dateFin: "", salaire: 0 });
+    setContratErrors({});
     setContratFormOpen(true);
   };
 
@@ -213,19 +215,19 @@ export default function ContratsPage() {
       typeContrat: c.typeContrat,
       dateDebut: c.dateDebut,
       dateFin: c.dateFin ?? "",
-      salaireBase: c.salaireBase ?? 0,
+      salaire: c.salaire ?? 0,
     });
+    setContratErrors({});
     setContratFormOpen(true);
   };
 
   const handleSaveContrat = () => {
-    const result = validate(contratSchema, { ...contratForm, salaire: contratForm.salaireBase });
+    const result = validate(contratSchema, contratForm);
     if (!result.ok) { setContratErrors(result.errors); return; }
     setContratErrors({});
     const payload = {
       ...contratForm,
       dateFin: contratForm.dateFin || undefined,
-      salaireBase: contratForm.salaireBase || undefined,
     };
     if (editContrat) {
       updateContratMutation.mutate(
@@ -382,7 +384,7 @@ export default function ContratsPage() {
                         </td>
                         <td className="py-3 px-4 hidden sm:table-cell text-muted-foreground">{new Date(contrat.dateDebut).toLocaleDateString("fr-FR")}</td>
                         <td className="py-3 px-4 hidden md:table-cell text-muted-foreground">{contrat.dateFin ? new Date(contrat.dateFin).toLocaleDateString("fr-FR") : "-"}</td>
-                        <td className="py-3 px-4 hidden lg:table-cell text-muted-foreground">{contrat.salaireBase ? `${contrat.salaireBase.toLocaleString()} MAD` : "-"}</td>
+                        <td className="py-3 px-4 hidden lg:table-cell text-muted-foreground">{contrat.salaire ? `${contrat.salaire.toLocaleString()} ${CURRENCY}` : "-"}</td>
                         <td className="py-3 px-4 text-end">
                           <div className="hidden sm:flex items-center justify-end gap-1">
                             <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-amber-600" onClick={() => openEditContrat(contrat)}>
@@ -523,6 +525,9 @@ export default function ContratsPage() {
             <DialogDescription>{editContrat ? t("contracts.editInfo") : t("contracts.createContract")}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
+            {contratErrors._root && (
+              <p className="text-sm text-red-600">{contratErrors._root}</p>
+            )}
             <div className="space-y-1.5">
               <Label>{t("common.teacher")}</Label>
               <Select value={contratForm.enseignantId ? String(contratForm.enseignantId) : ""} onValueChange={(v) => setContratForm({ ...contratForm, enseignantId: Number(v) })}>
@@ -533,6 +538,7 @@ export default function ContratsPage() {
                   ))}
                 </SelectContent>
               </Select>
+              {contratErrors.enseignantId && <p className="text-xs text-red-600">{contratErrors.enseignantId}</p>}
             </div>
             <div className="space-y-1.5">
               <Label>{t("common.type")}</Label>
@@ -544,20 +550,24 @@ export default function ContratsPage() {
                   ))}
                 </SelectContent>
               </Select>
+              {contratErrors.typeContrat && <p className="text-xs text-red-600">{contratErrors.typeContrat}</p>}
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label htmlFor="contratDebut">{t("common.startDate")}</Label>
                 <Input id="contratDebut" type="date" value={contratForm.dateDebut} onChange={(e) => setContratForm({ ...contratForm, dateDebut: e.target.value })} />
+                {contratErrors.dateDebut && <p className="text-xs text-red-600">{contratErrors.dateDebut}</p>}
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="contratFin">{t("common.endDate")}</Label>
                 <Input id="contratFin" type="date" value={contratForm.dateFin} onChange={(e) => setContratForm({ ...contratForm, dateFin: e.target.value })} />
+                {contratErrors.dateFin && <p className="text-xs text-red-600">{contratErrors.dateFin}</p>}
               </div>
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="salaireBase">{t("contracts.baseSalary")}</Label>
-              <Input id="salaireBase" type="number" value={contratForm.salaireBase || ""} onChange={(e) => setContratForm({ ...contratForm, salaireBase: Number(e.target.value) })} placeholder="0" />
+              <Label htmlFor="salaire">{t("contracts.baseSalary")}</Label>
+              <Input id="salaire" type="number" value={contratForm.salaire || ""} onChange={(e) => setContratForm({ ...contratForm, salaire: Number(e.target.value) })} placeholder="0" />
+              {contratErrors.salaire && <p className="text-xs text-red-600">{contratErrors.salaire}</p>}
             </div>
           </div>
           <DialogFooter>

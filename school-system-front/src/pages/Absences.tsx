@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { PermissionGate } from "@/components/auth/Gates";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -233,10 +234,12 @@ export default function AbsencesPage() {
             <CalendarDays className="h-4 w-4" />
             Feuilles du jour
           </Button>
-          <Button size="sm" className="gap-1.5 bg-gradient-primary shadow-btn" onClick={() => navigate("/dashboard/absences/appel")}>
-            <ClipboardList className="h-4 w-4" />
-            Faire l'appel
-          </Button>
+          <PermissionGate perms={["WRITE_ABSENCES"]}>
+            <Button size="sm" className="gap-1.5 bg-gradient-primary shadow-btn" onClick={() => navigate("/dashboard/absences/appel")}>
+              <ClipboardList className="h-4 w-4" />
+              Faire l'appel
+            </Button>
+          </PermissionGate>
         </div>
       </motion.div>
 
@@ -416,9 +419,11 @@ export default function AbsencesPage() {
                               <FileCheck className="h-4 w-4" />
                             </Button>
                           )}
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-red-600" onClick={() => setDeleteTarget(absence)}>
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                          <PermissionGate perms={["WRITE_ABSENCES"]}>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-red-600" onClick={() => setDeleteTarget(absence)}>
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </PermissionGate>
                         </div>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>

@@ -1,5 +1,19 @@
 import api from "./axios";
 
+export const SALLE_TYPES = [
+  "NORMAL",
+  "LABO_SVT",
+  "LABO_PHYSIQUE",
+  "INFO",
+  "GYMNASE",
+  "ARTS",
+  "MUSIQUE",
+] as const;
+export type SalleType = (typeof SALLE_TYPES)[number];
+
+export const PREFERENCES_HORAIRES = ["MATIN", "APRES_MIDI", "INDIFFERENT"] as const;
+export type PreferenceHoraire = (typeof PREFERENCES_HORAIRES)[number];
+
 export interface ModuleDTO {
   id: number;
   name: string;
@@ -16,6 +30,10 @@ export interface ModuleDTO {
   sousDomaineName: string | null;
   versionEtatique: boolean;
   versionPrivee: boolean;
+  salleTypeRequise: SalleType;
+  dureeMinSeance: number;
+  dureeMaxSeance: number;
+  preferenceHoraire: PreferenceHoraire;
 }
 
 export interface ModuleRequest {
@@ -30,6 +48,10 @@ export interface ModuleRequest {
   sousDomaineId?: number;
   versionEtatique: boolean;
   versionPrivee: boolean;
+  salleTypeRequise?: SalleType;
+  dureeMinSeance?: number;
+  dureeMaxSeance?: number;
+  preferenceHoraire?: PreferenceHoraire;
 }
 
 const BASE = "/modules";

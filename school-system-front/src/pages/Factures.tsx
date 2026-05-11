@@ -65,6 +65,7 @@ import {
   useCreateEcheancier,
   useDeleteEcheancier,
 } from "@/hooks/useFactures";
+import { CURRENCY } from "@/config/currency";
 import type { Facture, Echeancier } from "@/types/facture";
 
 const STATUT_COLORS: Record<Facture["statut"], string> = {
@@ -161,9 +162,9 @@ export default function FacturesPage() {
 
   const stats = [
     { label: t("invoices.totalInvoices"), value: allFactures.length, icon: Receipt, color: "bg-blue-50", textColor: "text-blue-700" },
-    { label: t("invoices.totalAmount"), value: `${totalMontant.toLocaleString()} MAD`, icon: DollarSign, color: "bg-purple-50", textColor: "text-purple-700" },
-    { label: t("invoices.paidAmount"), value: `${montantPaye.toLocaleString()} MAD`, icon: CheckCircle, color: "bg-emerald-50", textColor: "text-emerald-700" },
-    { label: t("invoices.remainingAmount"), value: `${montantRestant.toLocaleString()} MAD`, icon: Clock, color: "bg-red-50", textColor: "text-red-700" },
+    { label: t("invoices.totalAmount"), value: `${totalMontant.toLocaleString()} ${CURRENCY}`, icon: DollarSign, color: "bg-purple-50", textColor: "text-purple-700" },
+    { label: t("invoices.paidAmount"), value: `${montantPaye.toLocaleString()} ${CURRENCY}`, icon: CheckCircle, color: "bg-emerald-50", textColor: "text-emerald-700" },
+    { label: t("invoices.remainingAmount"), value: `${montantRestant.toLocaleString()} ${CURRENCY}`, icon: Clock, color: "bg-red-50", textColor: "text-red-700" },
   ];
 
   const hasFilters = search || filterStatut !== "all";
@@ -349,9 +350,9 @@ export default function FacturesPage() {
                         </td>
                         <td className="py-3 px-4 font-medium text-foreground">{facture.eleveNom ?? `Eleve #${facture.eleveId}`}</td>
                         <td className="py-3 px-4 hidden sm:table-cell text-muted-foreground">{new Date(facture.dateEmission).toLocaleDateString("fr-FR")}</td>
-                        <td className="py-3 px-4 hidden md:table-cell text-end text-muted-foreground">{facture.montantTotal.toLocaleString()} MAD</td>
+                        <td className="py-3 px-4 hidden md:table-cell text-end text-muted-foreground">{facture.montantTotal.toLocaleString()} {CURRENCY}</td>
                         <td className="py-3 px-4 hidden md:table-cell text-end text-muted-foreground">{facture.montantRemise > 0 ? `-${facture.montantRemise.toLocaleString()}` : "-"}</td>
-                        <td className="py-3 px-4 text-end font-semibold text-foreground">{facture.montantNet.toLocaleString()} MAD</td>
+                        <td className="py-3 px-4 text-end font-semibold text-foreground">{facture.montantNet.toLocaleString()} {CURRENCY}</td>
                         <td className="py-3 px-4">
                           <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUT_COLORS[facture.statut]}`}>
                             {STATUT_LABELS[facture.statut]}
@@ -457,7 +458,7 @@ export default function FacturesPage() {
                         <tr key={ech.id} className="border-b border-border/50 last:border-0 hover:bg-muted/20 transition-colors">
                           <td className="py-3 px-4 font-mono text-xs text-muted-foreground">#{ech.id}</td>
                           <td className="py-3 px-4 font-medium text-foreground">Eleve #{ech.eleveId}</td>
-                          <td className="py-3 px-4 text-end font-semibold text-foreground">{ech.montantTotal.toLocaleString()} MAD</td>
+                          <td className="py-3 px-4 text-end font-semibold text-foreground">{ech.montantTotal.toLocaleString()} {CURRENCY}</td>
                           <td className="py-3 px-4 hidden sm:table-cell text-muted-foreground">{ech.nbMensualites}</td>
                           <td className="py-3 px-4 hidden md:table-cell text-muted-foreground">{new Date(ech.dateDebut).toLocaleDateString("fr-FR")}</td>
                           <td className="py-3 px-4 hidden lg:table-cell">
@@ -590,15 +591,15 @@ export default function FacturesPage() {
                 </div>
                 <div>
                   <p className="text-muted-foreground">{t("invoices.totalAmount")}</p>
-                  <p className="font-medium">{detailTarget.montantTotal.toLocaleString()} MAD</p>
+                  <p className="font-medium">{detailTarget.montantTotal.toLocaleString()} {CURRENCY}</p>
                 </div>
                 <div>
                   <p className="text-muted-foreground">{t("invoices.discountAmount")}</p>
-                  <p>{detailTarget.montantRemise > 0 ? `${detailTarget.montantRemise.toLocaleString()} MAD` : "-"}</p>
+                  <p>{detailTarget.montantRemise > 0 ? `${detailTarget.montantRemise.toLocaleString()} ${CURRENCY}` : "-"}</p>
                 </div>
                 <div>
                   <p className="text-muted-foreground">{t("invoices.netAmount")}</p>
-                  <p className="font-heading text-lg font-bold">{detailTarget.montantNet.toLocaleString()} MAD</p>
+                  <p className="font-heading text-lg font-bold">{detailTarget.montantNet.toLocaleString()} {CURRENCY}</p>
                 </div>
                 <div>
                   <p className="text-muted-foreground">{t("common.status")}</p>

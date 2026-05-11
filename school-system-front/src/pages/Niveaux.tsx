@@ -1,6 +1,7 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { GraduationCap, Plus, X, Users, Trash2 } from "lucide-react";
+import { GraduationCap, Plus, X, Users, Trash2, Eye } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -15,11 +16,19 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useNiveaux, useCreateNiveau, useDeleteNiveau, useAddClasse, useRemoveClasse } from "@/hooks/useNiveaux";
 import { useAllStudents } from "@/hooks/useStudents";
 import { NiveauxSkeleton } from "@/components/skeletons/NiveauxSkeleton";
 import { notify } from "@/lib/toast";
 import { useLanguage } from "@/hooks/useLanguage";
+import type { Student } from "@/types/student";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
@@ -30,18 +39,22 @@ const fadeUp = {
   }),
 };
 
-function NiveauCard({ niveauId, nom, sections, studentCount, index }: {
+function NiveauCard({ niveauId, nom, sections, students, index, onOpenClasse }: {
   niveauId: number;
   nom: string;
   sections: string[];
-  studentCount: number;
+  students: Student[];
   index: number;
+  onOpenClasse: (classe: string) => void;
 }) {
   const [newSection, setNewSection] = useState("");
   const addClasse = useAddClasse();
   const removeClasse = useRemoveClasse();
   const deleteNiveau = useDeleteNiveau();
   const prefix = nom.match(/^(\d+)/)?.[1] || "";
+  const studentCount = students.filter((s) => s.niveau === nom).length;
+  const countByClasse = (classe: string) =>
+    students.filter((s) => s.niveau === nom && s.classe === classe).length;
 
   const handleAdd = () => {
     const letter = newSection.toUpperCase().trim();
@@ -143,21 +156,33 @@ function NiveauCard({ niveauId, nom, sections, studentCount, index }: {
         {sections.length === 0 && (
           <span className="text-xs text-muted-foreground italic">Aucune section</span>
         )}
-        {sections.map((letter) => (
-          <Badge
-            key={letter}
-            variant="outline"
-            className="gap-1 ps-2.5 pe-1 py-1 text-xs font-medium"
-          >
-            {prefix}{letter}
-            <button
-              onClick={() => handleRemove(letter)}
-              className="ms-0.5 rounded-full p-0.5 hover:bg-destructive/10 hover:text-destructive transition-colors"
+        {sections.map((letter) => {
+          const classeNom = `${prefix}${letter}`;
+          const count = countByClasse(classeNom);
+          return (
+            <Badge
+              key={letter}
+              variant="outline"
+              className="gap-1 ps-1 pe-1 py-1 text-xs font-medium"
             >
-              <X className="h-3 w-3" />
-            </button>
-          </Badge>
-        ))}
+              <button
+                onClick={() => onOpenClasse(classeNom)}
+                className="flex items-center gap-1 rounded px-1.5 py-0.5 hover:bg-primary/10 hover:text-primary transition-colors"
+                title={`Voir les élèves de ${classeNom}`}
+              >
+                <span>{classeNom}</span>
+                <span className="text-[10px] text-muted-foreground">({count})</span>
+              </button>
+              <button
+                onClick={() => handleRemove(letter)}
+                className="ms-0.5 rounded-full p-0.5 hover:bg-destructive/10 hover:text-destructive transition-colors"
+                title="Supprimer la section"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </Badge>
+          );
+        })}
       </div>
 
       <div className="flex gap-2">
@@ -179,16 +204,21 @@ function NiveauCard({ niveauId, nom, sections, studentCount, index }: {
 
 export default function Niveaux() {
   const { t } = useLanguage();
+  const navigate = useNavigate();
   const { niveaux, isLoading } = useNiveaux();
   const createNiveau = useCreateNiveau();
   const { data: students = [] } = useAllStudents();
   const [newNiveauNom, setNewNiveauNom] = useState("");
   const [niveauError, setNiveauError] = useState<string | null>(null);
+  const [openClasse, setOpenClasse] = useState<string | null>(null);
 
   if (isLoading) return <NiveauxSkeleton />;
 
-  const getStudentCount = (niveauNom: string) =>
-    students.filter((s) => s.niveau === niveauNom).length;
+  const studentsInOpenClasse = openClasse
+    ? students
+        .filter((s) => s.classe === openClasse)
+        .sort((a, b) => `${a.nom} ${a.prenom}`.localeCompare(`${b.nom} ${b.prenom}`))
+    : [];
 
   const handleAddNiveau = () => {
     const nom = newNiveauNom.trim();
@@ -256,11 +286,74 @@ export default function Niveaux() {
             niveauId={niveau.id}
             nom={niveau.nom}
             sections={niveau.sections}
-            studentCount={getStudentCount(niveau.nom)}
+            students={students}
             index={i}
+            onOpenClasse={setOpenClasse}
           />
         ))}
       </div>
+
+      <Dialog open={!!openClasse} onOpenChange={(o) => !o && setOpenClasse(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <GraduationCap className="h-5 w-5 text-primary" />
+              Élèves de la classe {openClasse}
+            </DialogTitle>
+            <DialogDescription>
+              {studentsInOpenClasse.length} élève{studentsInOpenClasse.length > 1 ? "s" : ""} inscrit{studentsInOpenClasse.length > 1 ? "s" : ""}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="max-h-[60vh] overflow-y-auto">
+            {studentsInOpenClasse.length === 0 ? (
+              <div className="py-8 text-center text-sm text-muted-foreground">
+                Aucun élève dans cette classe
+              </div>
+            ) : (
+              <div className="divide-y divide-border/50">
+                {studentsInOpenClasse.map((s) => (
+                  <div
+                    key={s.id}
+                    className="flex items-center justify-between gap-3 py-2.5 px-1 hover:bg-muted/40 rounded transition-colors"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-semibold shrink-0 ${
+                        s.sexe === "F" ? "bg-pink-100 text-pink-700" : "bg-blue-100 text-blue-700"
+                      }`}>
+                        {s.prenom?.[0]}{s.nom?.[0]}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium truncate">
+                          {s.nom} {s.prenom}
+                        </p>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {s.matricule}
+                          {s.statut && s.statut !== "Actif" && (
+                            <span className="ms-2 text-amber-600">• {s.statut}</span>
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-8 gap-1.5 shrink-0"
+                      onClick={() => {
+                        setOpenClasse(null);
+                        navigate(`/dashboard/eleves/${s.id}`);
+                      }}
+                    >
+                      <Eye className="h-3.5 w-3.5" />
+                      Profil
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -48,10 +48,10 @@ export type FichePaieFormValues = z.infer<typeof fichePaieSchema>;
 export const contratSchema = z
   .object({
     enseignantId: z.coerce.number().int().positive("Enseignant requis"),
-    type: z.string().min(1, "Type requis"),
+    typeContrat: z.string().min(1, "Type requis"),
     dateDebut: z.string().min(1, "Date début requise"),
     dateFin: z.string().optional(),
-    salaire: z.coerce.number().min(0, "Min 0").optional(),
+    salaire: z.coerce.number().positive("Salaire requis"),
   })
   .refine((v) => !v.dateFin || new Date(v.dateFin) > new Date(v.dateDebut), {
     message: "La date de fin doit être après la date de début",

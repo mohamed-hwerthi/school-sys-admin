@@ -93,3 +93,18 @@ export function useImportStudents() {
     },
   });
 }
+
+/**
+ * Robust import — returns a per-row result with success/skipped/failed counts
+ * and detailed errors. Prefer this over useImportStudents for the UI wizard.
+ */
+export function useImportStudentsRobust() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (students: Omit<Student, "id" | "dateInscription">[]) =>
+      studentsApi.importBulkRobust(students),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: [STUDENTS_KEY] });
+    },
+  });
+}

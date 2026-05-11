@@ -8,6 +8,7 @@ import {
   Plus,
   Edit,
   Trash2,
+  FileDown,
   MoreHorizontal,
   X,
   Loader2,
@@ -51,6 +52,12 @@ import {
   useUpdateFichePaie,
   useDeleteFichePaie,
 } from "@/hooks/useRh";
+import { CURRENCY } from "@/config/currency";
+import { useTeachers } from "@/hooks/useTeachers";
+import { useAllUsers } from "@/hooks/useUsers";
+import { useSchool } from "@/hooks/useSchool";
+import { generateFichePaiePDF, moisLabel } from "@/lib/generateFichePaiePDF";
+import { notify } from "@/lib/toast";
 import type { FichePaie, CreateFichePaieRequest } from "@/types/rh";
 
 const ITEMS_PER_PAGE = 15;
@@ -114,6 +121,47 @@ export default function PaiePage() {
   const updateMutation = useUpdateFichePaie();
   const deleteMutation = useDeleteFichePaie();
 
+  // Employé selectors backing data
+  const { teachers } = useTeachers();
+  const { data: allUsers = [] } = useAllUsers();
+  const { school } = useSchool();
+
+  /** Resolve a display name from an employeId + employeType pair, with a graceful fallback. */
+  const employeNameById = (employeId: number, employeType: string): string => {
+    if (employeType === "ENSEIGNANT") {
+      const teacher = teachers.find((t) => t.id === employeId);
+      if (teacher) return `${teacher.prenom} ${teacher.nom}`;
+    } else {
+      const user = allUsers.find((u) => u.id === employeId);
+      if (user) return `${user.firstName} ${user.lastName}`;
+    }
+    return `#${employeId}`;
+  };
+
+  const handleDownloadPDF = (f: FichePaie) => {
+    if (!school) {
+      notify.error("Informations de l'école non disponibles");
+      return;
+    }
+    generateFichePaiePDF(
+      {
+        reference: `FP-${f.annee}-${String(f.mois).padStart(2, "0")}-${String(f.id).padStart(3, "0")}`,
+        employeName: employeNameById(f.employeId, f.employeType),
+        employeType: f.employeType,
+        moisLabel: moisLabel(f.mois),
+        annee: f.annee,
+        salaireBase: f.salaireBase,
+        primes: f.primes,
+        retenues: f.retenues,
+        salaireNet: f.salaireNet,
+        datePaiement: f.datePaiement ?? null,
+        paye: f.paye,
+        commentaire: f.commentaire ?? null,
+      },
+      school
+    );
+  };
+
   // Filter by month/year + search
   const filtered = useMemo(() => {
     let list = fichesPaie;
@@ -125,12 +173,11 @@ export default function PaiePage() {
       list = list.filter((f) => f.annee === Number(filterAnnee));
     }
     if (search) {
-      const q = search.toLowerCase();
-      list = list.filter(
-        (f) =>
-          String(f.employeId).includes(q) ||
-          f.employeType.toLowerCase().includes(q)
-      );
+      // search holds the chosen employeId (as string) when set
+      const empId = Number(search);
+      if (!Number.isNaN(empId) && empId > 0) {
+        list = list.filter((f) => f.employeId === empId);
+      }
     }
     if (filterPaye !== "all") {
       list = list.filter((f) =>
@@ -153,7 +200,7 @@ export default function PaiePage() {
   const stats = [
     {
       label: t("payroll.payrollTotal"),
-      value: `${totalMasse.toLocaleString()} MAD`,
+      value: `${totalMasse.toLocaleString()} ${CURRENCY}`,
       icon: DollarSign,
       color: "bg-blue-50",
       textColor: "text-blue-700",
@@ -366,18 +413,34 @@ export default function PaiePage() {
               ))}
             </SelectContent>
           </Select>
-          <div className="relative flex-1 min-w-0">
-            <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                setCurrentPage(0);
-              }}
-              placeholder={t("payroll.searchPlaceholder")}
-              className="ps-9"
-            />
-          </div>
+          <Select
+            value={search || "all"}
+            onValueChange={(v) => {
+              setSearch(v === "all" ? "" : v);
+              setCurrentPage(0);
+            }}
+          >
+            <SelectTrigger className="flex-1 min-w-0">
+              <Search className="h-3.5 w-3.5 me-1.5 text-muted-foreground" />
+              <SelectValue placeholder="Filtrer par employé" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tous les employés</SelectItem>
+              {teachers.map((t) => (
+                <SelectItem key={`teacher-${t.id}`} value={String(t.id)}>
+                  {t.prenom} {t.nom}
+                  {t.specialite ? ` — ${t.specialite}` : ""}
+                </SelectItem>
+              ))}
+              {allUsers
+                .filter((u) => !["ENSEIGNANT", "PARENT"].includes(u.role))
+                .map((u) => (
+                  <SelectItem key={`user-${u.id}`} value={String(u.id)}>
+                    {u.firstName} {u.lastName} ({u.role})
+                  </SelectItem>
+                ))}
+            </SelectContent>
+          </Select>
           <Select
             value={filterPaye}
             onValueChange={(v) => {
@@ -465,7 +528,7 @@ export default function PaiePage() {
                     <td className="py-3 px-4">
                       <div>
                         <span className="font-medium text-foreground">
-                          #{f.employeId}
+                          {employeNameById(f.employeId, f.employeType)}
                         </span>
                         <Badge variant="outline" className="ms-2 text-[10px]">
                           {f.employeType}
@@ -476,7 +539,7 @@ export default function PaiePage() {
                       {MOIS_LABELS[f.mois]} {f.annee}
                     </td>
                     <td className="py-3 px-4 hidden md:table-cell text-muted-foreground">
-                      {f.salaireBase.toLocaleString()} MAD
+                      {f.salaireBase.toLocaleString()} {CURRENCY}
                     </td>
                     <td className="py-3 px-4 hidden lg:table-cell text-emerald-600">
                       +{f.primes.toLocaleString()}
@@ -485,7 +548,7 @@ export default function PaiePage() {
                       -{f.retenues.toLocaleString()}
                     </td>
                     <td className="py-3 px-4 font-semibold text-foreground">
-                      {f.salaireNet.toLocaleString()} MAD
+                      {f.salaireNet.toLocaleString()} {CURRENCY}
                     </td>
                     <td className="py-3 px-4">
                       <span
@@ -500,6 +563,15 @@ export default function PaiePage() {
                     </td>
                     <td className="py-3 px-4 text-end">
                       <div className="hidden sm:flex items-center justify-end gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-muted-foreground hover:text-teal-600"
+                          onClick={() => handleDownloadPDF(f)}
+                          title="Télécharger PDF"
+                        >
+                          <FileDown className="h-4 w-4" />
+                        </Button>
                         <Button
                           variant="ghost"
                           size="icon"
@@ -528,6 +600,9 @@ export default function PaiePage() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => handleDownloadPDF(f)}>
+                            <FileDown className="h-4 w-4 me-2" /> Télécharger PDF
+                          </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => openEdit(f)}>
                             <Edit className="h-4 w-4 me-2" /> {t("common.edit")}
                           </DropdownMenuItem>
@@ -591,23 +666,12 @@ export default function PaiePage() {
           <div className="space-y-4 py-2">
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label htmlFor="paieEmployeId">{t("attendance.employeeType")} ID</Label>
-                <Input
-                  id="paieEmployeId"
-                  type="number"
-                  value={form.employeId || ""}
-                  onChange={(e) =>
-                    setForm({ ...form, employeId: Number(e.target.value) })
-                  }
-                  placeholder="ID"
-                />
-              </div>
-              <div className="space-y-1.5">
                 <Label>{t("common.type")}</Label>
                 <Select
                   value={form.employeType}
                   onValueChange={(v) =>
-                    setForm({ ...form, employeType: v })
+                    // Switching type invalidates the previously chosen employé
+                    setForm({ ...form, employeType: v, employeId: 0 })
                   }
                 >
                   <SelectTrigger>
@@ -619,6 +683,57 @@ export default function PaiePage() {
                     <SelectItem value="PERSONNEL">{t("attendance.employeeTypes.staff")}</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="paieEmployeId">Employé</Label>
+                {(() => {
+                  const options =
+                    form.employeType === "ENSEIGNANT"
+                      ? teachers.map((t) => ({
+                          id: t.id,
+                          label: `${t.prenom} ${t.nom}${t.specialite ? ` — ${t.specialite}` : ""}`,
+                        }))
+                      : form.employeType === "ADMIN"
+                      ? allUsers
+                          .filter((u) =>
+                            ["SUPER_ADMIN", "ADMIN", "DIRECTEUR"].includes(u.role)
+                          )
+                          .map((u) => ({
+                            id: u.id,
+                            label: `${u.firstName} ${u.lastName} (${u.role})`,
+                          }))
+                      : allUsers
+                          .filter((u) => !["ENSEIGNANT", "PARENT"].includes(u.role))
+                          .map((u) => ({
+                            id: u.id,
+                            label: `${u.firstName} ${u.lastName} (${u.role})`,
+                          }));
+                  return (
+                    <Select
+                      value={form.employeId ? String(form.employeId) : ""}
+                      onValueChange={(v) =>
+                        setForm({ ...form, employeId: Number(v) })
+                      }
+                    >
+                      <SelectTrigger id="paieEmployeId">
+                        <SelectValue placeholder="Sélectionner un employé…" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {options.length === 0 ? (
+                          <div className="px-2 py-3 text-xs text-muted-foreground text-center">
+                            Aucun {form.employeType === "ENSEIGNANT" ? "enseignant" : "utilisateur"} trouvé
+                          </div>
+                        ) : (
+                          options.map((o) => (
+                            <SelectItem key={o.id} value={String(o.id)}>
+                              {o.label}
+                            </SelectItem>
+                          ))
+                        )}
+                      </SelectContent>
+                    </Select>
+                  );
+                })()}
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
@@ -697,7 +812,7 @@ export default function PaiePage() {
                 Net
               </span>
               <span className="text-lg font-bold text-foreground">
-                {form.salaireNet.toLocaleString()} MAD
+                {form.salaireNet.toLocaleString()} {CURRENCY}
               </span>
             </div>
             <div className="grid grid-cols-2 gap-3">
