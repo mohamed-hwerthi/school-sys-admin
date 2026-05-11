@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import {
   Star,
   Plus,
+  Pencil,
   Trash2,
   Loader2,
   User,
@@ -49,6 +50,7 @@ import { useTeachers } from "@/hooks/useTeachers";
 import {
   useTeacherEvaluations,
   useCreateTeacherEvaluation,
+  useUpdateTeacherEvaluation,
   useDeleteTeacherEvaluation,
   useTeacherEvaluationStats,
 } from "@/hooks/useTeacherEvaluations";
@@ -110,12 +112,14 @@ export default function TeacherEvaluationsPage() {
     { key: "implication" as const, label: t("teacherEval.involvement") },
   ];
 
+  // 0 = "all teachers" (default view: list every teacher's evaluations)
   const [selectedTeacherId, setSelectedTeacherId] = useState(0);
   const [anneeScolaire, setAnneeScolaire] = useState("2025-2026");
   const [activeTab, setActiveTab] = useState("evaluations");
 
   // Form state
   const [formOpen, setFormOpen] = useState(false);
+  const [editId, setEditId] = useState<number | null>(null);
   const [formData, setFormData] = useState({
     trimestre: 1,
     ponctualite: 3,
@@ -131,14 +135,25 @@ export default function TeacherEvaluationsPage() {
   const [deleteId, setDeleteId] = useState<number | null>(null);
 
   const { teachers, isLoading: loadingTeachers } = useTeachers();
+  // When no teacher is selected, fetch all evaluations for the current année.
+  // When one is selected, scope to that teacher only.
   const { data: evaluations = [], isLoading: loadingEvaluations } =
     useTeacherEvaluations(
       selectedTeacherId > 0
         ? { teacherId: selectedTeacherId, anneeScolaire }
-        : undefined
+        : { anneeScolaire }
     );
+
+  // Group evaluations by teacher for the "all teachers" view
+  const evaluationsByTeacher = teachers
+    .map((tc) => ({
+      teacher: tc,
+      evals: evaluations.filter((e) => e.teacherId === tc.id),
+    }))
+    .filter((g) => g.evals.length > 0);
   const { data: stats } = useTeacherEvaluationStats(selectedTeacherId);
   const createMutation = useCreateTeacherEvaluation();
+  const updateMutation = useUpdateTeacherEvaluation();
   const deleteMutation = useDeleteTeacherEvaluation();
 
   const radarData = stats
@@ -152,6 +167,7 @@ export default function TeacherEvaluationsPage() {
     : [];
 
   const openCreateForm = () => {
+    setEditId(null);
     setFormData({
       trimestre: 1,
       ponctualite: 3,
@@ -165,24 +181,46 @@ export default function TeacherEvaluationsPage() {
     setFormOpen(true);
   };
 
-  const handleCreate = () => {
+  const openEditForm = (ev: TeacherEvaluation) => {
+    setEditId(ev.id);
+    setFormData({
+      trimestre: ev.trimestre,
+      ponctualite: ev.ponctualite ?? 3,
+      pedagogie: ev.pedagogie ?? 3,
+      discipline: ev.discipline ?? 3,
+      communication: ev.communication ?? 3,
+      implication: ev.implication ?? 3,
+      evaluatorName: ev.evaluatorName ?? "",
+      commentaire: ev.commentaire ?? "",
+    });
+    setFormOpen(true);
+  };
+
+  const handleSubmit = () => {
     if (!selectedTeacherId) return;
-    createMutation.mutate(
-      {
-        teacherId: selectedTeacherId,
-        evaluatorId: null,
-        evaluatorName: formData.evaluatorName || null,
-        anneeScolaire,
-        trimestre: formData.trimestre,
-        ponctualite: formData.ponctualite,
-        pedagogie: formData.pedagogie,
-        discipline: formData.discipline,
-        communication: formData.communication,
-        implication: formData.implication,
-        commentaire: formData.commentaire,
-      },
-      { onSuccess: () => setFormOpen(false) }
-    );
+    const payload = {
+      teacherId: selectedTeacherId,
+      evaluatorId: null,
+      evaluatorName: formData.evaluatorName || null,
+      anneeScolaire,
+      trimestre: formData.trimestre,
+      ponctualite: formData.ponctualite,
+      pedagogie: formData.pedagogie,
+      discipline: formData.discipline,
+      communication: formData.communication,
+      implication: formData.implication,
+      commentaire: formData.commentaire,
+    };
+    if (editId !== null) {
+      updateMutation.mutate(
+        { id: editId, data: payload },
+        { onSuccess: () => setFormOpen(false) }
+      );
+    } else {
+      createMutation.mutate(payload, {
+        onSuccess: () => setFormOpen(false),
+      });
+    }
   };
 
   const selectedTeacher = teachers.find((t) => t.id === selectedTeacherId);
@@ -245,13 +283,14 @@ export default function TeacherEvaluationsPage() {
           {t("teacherEval.chooseTeacher")}
         </Label>
         <Select
-          value={selectedTeacherId > 0 ? String(selectedTeacherId) : ""}
-          onValueChange={(v) => setSelectedTeacherId(Number(v))}
+          value={selectedTeacherId > 0 ? String(selectedTeacherId) : "all"}
+          onValueChange={(v) => setSelectedTeacherId(v === "all" ? 0 : Number(v))}
         >
           <SelectTrigger className="w-full max-w-md">
             <SelectValue placeholder={t("teacherEval.chooseTeacher")} />
           </SelectTrigger>
           <SelectContent>
+            <SelectItem value="all">Tous les enseignants</SelectItem>
             {teachers.map((t) => (
               <SelectItem key={t.id} value={String(t.id)}>
                 {t.prenom} {t.nom} - {t.specialite}
@@ -261,7 +300,92 @@ export default function TeacherEvaluationsPage() {
         </Select>
       </motion.div>
 
-      {/* Content */}
+      {/* All-teachers default view ─────────────────────────── */}
+      {selectedTeacherId === 0 && (
+        <motion.div
+          custom={2}
+          variants={fadeUp}
+          initial="hidden"
+          animate="visible"
+          className="space-y-3"
+        >
+          {loadingEvaluations ? (
+            <div className="flex justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            </div>
+          ) : evaluationsByTeacher.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-border/60 bg-card py-10 text-center text-muted-foreground">
+              <ClipboardList className="h-8 w-8 mx-auto mb-2 opacity-30" />
+              <p className="text-sm">Aucune évaluation pour {anneeScolaire}</p>
+              <p className="text-xs mt-1">
+                Sélectionnez un enseignant pour ajouter une évaluation.
+              </p>
+            </div>
+          ) : (
+            evaluationsByTeacher.map(({ teacher, evals }) => {
+              // Average across all evaluations for this teacher
+              const avgGlobal =
+                evals.reduce((s, e) => s + (e.noteGlobale ?? 0), 0) / evals.length;
+              return (
+                <div
+                  key={teacher.id}
+                  className="rounded-xl border border-border/50 bg-card p-4 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+                  onClick={() => setSelectedTeacherId(teacher.id)}
+                  title="Voir le détail"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-purple-600 text-sm font-bold text-white shrink-0">
+                        {teacher.prenom[0]}
+                        {teacher.nom[0]}
+                      </div>
+                      <div className="min-w-0">
+                        <h3 className="font-heading text-base font-bold text-foreground truncate">
+                          {teacher.prenom} {teacher.nom}
+                        </h3>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {teacher.specialite}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <Badge variant="outline">
+                        {evals.length} évaluation{evals.length > 1 ? "s" : ""}
+                      </Badge>
+                      <Badge className="bg-primary/10 text-primary">
+                        {avgGlobal.toFixed(1)}/5
+                      </Badge>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 mt-3 pt-3 border-t border-border/30">
+                    {CRITERIA.map((c) => {
+                      const avg =
+                        evals.reduce((s, e) => s + (e[c.key] ?? 0), 0) /
+                        evals.length;
+                      return (
+                        <div key={c.key} className="text-center">
+                          <p className="text-[10px] text-muted-foreground mb-1">
+                            {c.label}
+                          </p>
+                          <div className="flex items-center justify-center gap-0.5">
+                            <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+                            <span className="text-xs font-semibold tabular-nums">
+                              {avg.toFixed(1)}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </motion.div>
+      )}
+
+      {/* Single-teacher detail view ─────────────────────────── */}
       {selectedTeacherId > 0 && selectedTeacher && (
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <motion.div
@@ -342,6 +466,14 @@ export default function TeacherEvaluationsPage() {
                               ? new Date(ev.createdAt).toLocaleDateString("fr-FR")
                               : ""}
                           </span>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-muted-foreground hover:text-primary"
+                            onClick={() => openEditForm(ev)}
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
                           <Button
                             variant="ghost"
                             size="icon"
@@ -478,11 +610,21 @@ export default function TeacherEvaluationsPage() {
         </Tabs>
       )}
 
-      {/* Create Evaluation Dialog */}
-      <Dialog open={formOpen} onOpenChange={setFormOpen}>
+      {/* Create / Edit Evaluation Dialog */}
+      <Dialog
+        open={formOpen}
+        onOpenChange={(open) => {
+          setFormOpen(open);
+          if (!open) setEditId(null);
+        }}
+      >
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>{t("teacherEval.newEvaluation")}</DialogTitle>
+            <DialogTitle>
+              {editId !== null
+                ? t("teacherEval.editEvaluation") || "Modifier l'évaluation"
+                : t("teacherEval.newEvaluation")}
+            </DialogTitle>
             <DialogDescription>
               {t("teacherEval.title")}
             </DialogDescription>
@@ -549,10 +691,12 @@ export default function TeacherEvaluationsPage() {
               <Button variant="outline">Annuler</Button>
             </DialogClose>
             <Button
-              onClick={handleCreate}
-              disabled={createMutation.isPending}
+              onClick={handleSubmit}
+              disabled={createMutation.isPending || updateMutation.isPending}
             >
-              {createMutation.isPending ? "Enregistrement..." : "Enregistrer"}
+              {createMutation.isPending || updateMutation.isPending
+                ? "Enregistrement..."
+                : "Enregistrer"}
             </Button>
           </DialogFooter>
         </DialogContent>

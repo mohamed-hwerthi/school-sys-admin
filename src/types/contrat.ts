@@ -4,13 +4,18 @@ export type TypeConge = 'ANNUEL' | 'MALADIE' | 'MATERNITE' | 'EXCEPTIONNEL' | 'S
 
 export type StatutConge = 'EN_ATTENTE' | 'APPROUVE' | 'REFUSE';
 
+export type StatutContrat = 'ACTIF' | 'TERMINE' | 'SUSPENDU';
+
 export interface ContratEnseignant {
   id: number;
   enseignantId: number;
+  enseignantNom?: string;
   typeContrat: TypeContrat;
   dateDebut: string;
   dateFin?: string;
-  salaireBase?: number;
+  salaire: number;
+  statut?: StatutContrat;
+  observations?: string;
 }
 
 export interface Conge {

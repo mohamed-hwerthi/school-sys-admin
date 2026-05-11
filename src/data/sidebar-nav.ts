@@ -47,6 +47,16 @@ import {
   Crown,
 } from "lucide-react";
 
+/**
+ * RBAC convention for this file:
+ * - `roles` on a section is the gate for the WHOLE section (header + items).
+ * - `roles` on an item further restricts that item within an already-allowed section.
+ * - Omitting `roles` means the entry is visible to EVERY authenticated role.
+ *   Use this only for entries that genuinely make sense for all 6 roles
+ *   (SUPER_ADMIN, ADMIN, DIRECTEUR, ENSEIGNANT, COMPTABLE, PARENT).
+ * - The values must match the backend `UserRole` enum exactly
+ *   (school-system-back/.../auth/UserRole.java).
+ */
 export type NavItem = {
   title: string;
   titleKey: string;
@@ -86,8 +96,23 @@ export const sidebarSections: NavSection[] = [
       { title: "Inscriptions", titleKey: "nav.inscriptions", icon: ClipboardList, url: "/dashboard/inscriptions", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR"] },
       { title: "Absences", titleKey: "nav.absences", icon: UserCheck, url: "/dashboard/absences", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR", "ENSEIGNANT"] },
       { title: "Discipline", titleKey: "nav.discipline", icon: AlertTriangle, url: "/dashboard/discipline", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR", "ENSEIGNANT"] },
-      { title: "Calendrier", titleKey: "nav.calendar", icon: CalendarClock, url: "/dashboard/calendrier" },
+      { title: "Calendrier", titleKey: "nav.calendar", icon: CalendarClock, url: "/dashboard/calendrier", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR", "ENSEIGNANT", "COMPTABLE"] },
       { title: "Niveaux & Classes", titleKey: "nav.levelsClasses", icon: GraduationCap, url: "/dashboard/config/niveaux", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR"] },
+    ],
+  },
+  {
+    label: "Enseignants & RH",
+    labelKey: "nav.teachersHR",
+    icon: Briefcase,
+    color: "text-cyan-500",
+    roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR"],
+    items: [
+      { title: "Enseignants", titleKey: "nav.teachers", icon: UserCog, url: "/dashboard/enseignants" },
+      { title: "Affectations", titleKey: "nav.assignments", icon: ClipboardList, url: "/dashboard/affectations" },
+      { title: "Contrats & Congés", titleKey: "nav.contractsLeaves", icon: Briefcase, url: "/dashboard/contrats" },
+      { title: "Paie", titleKey: "nav.payroll", icon: Banknote, url: "/dashboard/rh/paie" },
+      { title: "Formations", titleKey: "nav.training", icon: Award, url: "/dashboard/rh/formations" },
+      { title: "Évaluations", titleKey: "nav.teacherEvaluations", icon: UserCog, url: "/dashboard/teacher-evaluations" },
     ],
   },
   {
@@ -98,6 +123,7 @@ export const sidebarSections: NavSection[] = [
     items: [
       { title: "Année scolaire", titleKey: "nav.schoolYear", icon: CalendarClock, url: "/dashboard/annee-scolaire", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR"] },
       { title: "Emploi du temps", titleKey: "nav.schedule", icon: Clock, url: "/dashboard/emploi-du-temps", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR", "ENSEIGNANT", "PARENT"] },
+      { title: "Volume horaire", titleKey: "nav.weeklyVolume", icon: Clock, url: "/dashboard/volume-horaire", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR"] },
       { title: "Salles", titleKey: "nav.rooms", icon: Calendar, url: "/dashboard/emploi-salles", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR"] },
       { title: "Devoirs", titleKey: "nav.homework", icon: PenTool, url: "/dashboard/devoirs", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR", "ENSEIGNANT"] },
       { title: "Carnets de notes", titleKey: "nav.gradeBooks", icon: BookOpen, url: "/dashboard/carnets", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR", "ENSEIGNANT", "PARENT"] },
@@ -161,27 +187,12 @@ export const sidebarSections: NavSection[] = [
     labelKey: "nav.communication",
     icon: Megaphone,
     color: "text-rose-500",
-    roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR", "ENSEIGNANT"],
+    roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR", "ENSEIGNANT", "PARENT"],
     items: [
       { title: "Annonces", titleKey: "nav.announcements", icon: Megaphone, url: "/dashboard/annonces" },
       { title: "Notifications", titleKey: "nav.notifications", icon: BellRing, url: "/dashboard/notifications" },
       { title: "Reunions", titleKey: "nav.meetings", icon: CalendarDays, url: "/dashboard/reunions" },
       { title: "Circulaires", titleKey: "nav.circulars", icon: Newspaper, url: "/dashboard/circulaires", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR"] },
-    ],
-  },
-  {
-    label: "Enseignants & RH",
-    labelKey: "nav.teachersHR",
-    icon: Briefcase,
-    color: "text-cyan-500",
-    roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR"],
-    items: [
-      { title: "Enseignants", titleKey: "nav.teachers", icon: UserCog, url: "/dashboard/enseignants" },
-      { title: "Contrats & Congés", titleKey: "nav.contractsLeaves", icon: Briefcase, url: "/dashboard/contrats" },
-      { title: "Pointage", titleKey: "nav.attendance", icon: UserPlus, url: "/dashboard/rh/pointage" },
-      { title: "Paie", titleKey: "nav.payroll", icon: Banknote, url: "/dashboard/rh/paie" },
-      { title: "Formations", titleKey: "nav.training", icon: Award, url: "/dashboard/rh/formations" },
-      { title: "Évaluations", titleKey: "nav.teacherEvaluations", icon: UserCog, url: "/dashboard/teacher-evaluations" },
     ],
   },
   {

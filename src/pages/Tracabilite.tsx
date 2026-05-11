@@ -194,7 +194,7 @@ export default function Tracabilite() {
               </SelectContent>
             </Select>
             <Select value={filterModule} onValueChange={(v) => { setFilterModule(v); setCurrentPage(1); }}>
-              <SelectTrigger className="w-[150px]"><SelectValue placeholder="Module" /></SelectTrigger>
+              <SelectTrigger className="w-[150px]"><SelectValue placeholder="Matière" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Tous</SelectItem>
                 {MODULES_ACTION.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}

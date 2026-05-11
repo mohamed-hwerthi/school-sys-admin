@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { useOnboard } from "@/hooks/useSaas";
 import type { TenantOnboardingRequest } from "@/types/saas";
 import { useLanguage } from "@/hooks/useLanguage";
+import { CURRENCY } from "@/config/currency";
 
 const STEPS = [
   { label: "Ecole", icon: School },
@@ -29,7 +30,7 @@ const PLANS = [
     name: "Gratuit",
     price: "0",
     description: "Ideal pour demarrer",
-    features: ["50 eleves max", "10 enseignants max", "Modules de base", "Support communautaire"],
+    features: ["50 eleves max", "10 enseignants max", "Matières de base", "Support communautaire"],
     color: "border-gray-200",
     popular: false,
   },
@@ -238,7 +239,7 @@ export default function Onboarding() {
                       <h3 className="font-heading text-sm font-bold mt-1">{plan.name}</h3>
                       <div className="mt-1">
                         <span className="font-heading text-2xl font-bold">{plan.price}</span>
-                        <span className="text-xs text-muted-foreground"> DH/mois</span>
+                        <span className="text-xs text-muted-foreground"> {CURRENCY}/mois</span>
                       </div>
                       <p className="text-xs text-muted-foreground mt-1">{plan.description}</p>
                       <ul className="mt-3 space-y-1">

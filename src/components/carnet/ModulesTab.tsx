@@ -30,8 +30,29 @@ import {
   useDeleteModule,
 } from "@/hooks/useModules";
 import { useDomaines } from "@/hooks/useDomaines";
-import type { ModuleDTO, ModuleRequest } from "@/api/modules.api";
+import {
+  type ModuleDTO,
+  type ModuleRequest,
+  SALLE_TYPES,
+  PREFERENCES_HORAIRES,
+} from "@/api/modules.api";
 import type { SousDomaineDTO } from "@/api/domaines.api";
+
+const SALLE_TYPE_LABELS: Record<(typeof SALLE_TYPES)[number], string> = {
+  NORMAL: "Salle normale",
+  LABO_SVT: "Labo SVT",
+  LABO_PHYSIQUE: "Labo physique",
+  INFO: "Salle informatique",
+  GYMNASE: "Gymnase",
+  ARTS: "Salle d'arts",
+  MUSIQUE: "Salle de musique",
+};
+
+const PREF_HORAIRE_LABELS: Record<(typeof PREFERENCES_HORAIRES)[number], string> = {
+  MATIN: "Matin de préférence",
+  APRES_MIDI: "Après-midi de préférence",
+  INDIFFERENT: "Indifférent",
+};
 
 const emptyForm: ModuleRequest = {
   name: "",
@@ -45,6 +66,10 @@ const emptyForm: ModuleRequest = {
   sousDomaineId: undefined,
   versionEtatique: true,
   versionPrivee: true,
+  salleTypeRequise: "NORMAL",
+  dureeMinSeance: 1,
+  dureeMaxSeance: 2,
+  preferenceHoraire: "INDIFFERENT",
 };
 
 export default function ModulesTab() {
@@ -92,13 +117,17 @@ export default function ModulesTab() {
       sousDomaineId: m.sousDomaineId ?? undefined,
       versionEtatique: m.versionEtatique,
       versionPrivee: m.versionPrivee,
+      salleTypeRequise: m.salleTypeRequise,
+      dureeMinSeance: m.dureeMinSeance,
+      dureeMaxSeance: m.dureeMaxSeance,
+      preferenceHoraire: m.preferenceHoraire,
     });
     setShowDialog(true);
   };
 
   const handleSave = () => {
     if (!form.name.trim()) {
-      notify.error("Le nom du module est obligatoire");
+      notify.error("Le nom de la matière est obligatoire");
       return;
     }
     if (editId) {
@@ -106,7 +135,7 @@ export default function ModulesTab() {
         { id: editId, data: form },
         {
           onSuccess: () => {
-            notify.success("Module modifié");
+            notify.success("Matière modifiée");
             setShowDialog(false);
           },
           onError: () => notify.error("Erreur lors de la modification"),
@@ -115,7 +144,7 @@ export default function ModulesTab() {
     } else {
       createModule.mutate(form, {
         onSuccess: () => {
-          notify.success("Module créé");
+          notify.success("Matière créée");
           setShowDialog(false);
         },
         onError: () => notify.error("Erreur lors de la création"),
@@ -127,7 +156,7 @@ export default function ModulesTab() {
     if (!deleteTarget) return;
     deleteModule.mutate(deleteTarget.id, {
       onSuccess: () => {
-        notify.success("Module supprimé");
+        notify.success("Matière supprimée");
         setDeleteTarget(null);
       },
       onError: () => notify.error("Erreur lors de la suppression"),
@@ -168,7 +197,7 @@ export default function ModulesTab() {
               onClick={openAdd}
             >
               <Plus className="h-4 w-4" />
-              Ajouter un module
+              Ajouter une matière
             </Button>
           </div>
         </div>
@@ -241,7 +270,7 @@ export default function ModulesTab() {
                     >
                       <BookOpen className="h-10 w-10 mx-auto mb-3 opacity-30" />
                       <p className="font-medium">
-                        Aucun module pour ce niveau
+                        Aucune matière pour ce niveau
                       </p>
                     </td>
                   </tr>
@@ -319,7 +348,7 @@ export default function ModulesTab() {
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>
-              {editId ? "Modifier le module" : "Nouveau module"}
+              {editId ? "Modifier la matière" : "Nouvelle matière"}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 mt-2">
@@ -471,6 +500,83 @@ export default function ModulesTab() {
                 </Label>
               </div>
             </div>
+
+            <div className="pt-4 border-t border-border/50">
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
+                Planification (emploi du temps)
+              </p>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Type de salle requis</Label>
+                  <Select
+                    value={form.salleTypeRequise ?? "NORMAL"}
+                    onValueChange={(v) =>
+                      setForm({ ...form, salleTypeRequise: v as ModuleRequest["salleTypeRequise"] })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {SALLE_TYPES.map((t) => (
+                        <SelectItem key={t} value={t}>
+                          {SALLE_TYPE_LABELS[t]}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Préférence horaire</Label>
+                  <Select
+                    value={form.preferenceHoraire ?? "INDIFFERENT"}
+                    onValueChange={(v) =>
+                      setForm({ ...form, preferenceHoraire: v as ModuleRequest["preferenceHoraire"] })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {PREFERENCES_HORAIRES.map((p) => (
+                        <SelectItem key={p} value={p}>
+                          {PREF_HORAIRE_LABELS[p]}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4 mt-3">
+                <div>
+                  <Label>Durée min séance (heures)</Label>
+                  <Input
+                    type="number"
+                    min={1}
+                    max={4}
+                    value={form.dureeMinSeance ?? 1}
+                    onChange={(e) =>
+                      setForm({ ...form, dureeMinSeance: Number(e.target.value) })
+                    }
+                  />
+                </div>
+                <div>
+                  <Label>Durée max séance (heures)</Label>
+                  <Input
+                    type="number"
+                    min={1}
+                    max={4}
+                    value={form.dureeMaxSeance ?? 2}
+                    onChange={(e) =>
+                      setForm({ ...form, dureeMaxSeance: Number(e.target.value) })
+                    }
+                  />
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground mt-2">
+                Mettre <strong>Min = Max = 2</strong> pour forcer des séances doubles (TP, EPS).
+              </p>
+            </div>
           </div>
           <DialogFooter className="mt-4">
             <DialogClose asChild>
@@ -496,7 +602,7 @@ export default function ModulesTab() {
             <DialogTitle>Confirmer la suppression</DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
-            Supprimer le module{" "}
+            Supprimer la matière{" "}
             <span className="font-semibold text-foreground">
               {deleteTarget?.name}
             </span>{" "}

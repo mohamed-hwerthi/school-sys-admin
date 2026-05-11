@@ -73,4 +73,26 @@ export const studentsApi = {
     const res = await api.post<StudentApiDTO[]>(`${BASE}/import`, payload);
     return res.data.map(fromApi);
   },
+
+  importBulkRobust: async (
+    students: Omit<Student, "id" | "dateInscription">[]
+  ): Promise<BulkImportResult> => {
+    const payload = students.map(toApi);
+    const res = await api.post<BulkImportResult>(`${BASE}/import/robust`, payload);
+    return res.data;
+  },
 };
+
+export interface BulkImportRowError {
+  row: number;
+  field?: string | null;
+  message: string;
+  code: "VALIDATION" | "DUPLICATE" | "ERROR";
+}
+
+export interface BulkImportResult {
+  created: number;
+  skipped: number;
+  failed: number;
+  errors: BulkImportRowError[];
+}

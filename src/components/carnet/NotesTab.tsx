@@ -408,7 +408,7 @@ export default function NotesTab() {
               disabled={!niveauId}
             >
               <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Module" />
+                <SelectValue placeholder="Matière" />
               </SelectTrigger>
               <SelectContent>
                 {modules.map((m) => (

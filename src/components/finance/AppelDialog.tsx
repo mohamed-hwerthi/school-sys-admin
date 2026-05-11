@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { notify } from "@/lib/toast";
 import type { Student } from "@/types/student";
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,16 @@ import {
   DialogFooter,
   DialogClose,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Phone } from "lucide-react";
+import { useCreateAppelParent } from "@/hooks/useAppelsParents";
+import { useAuth } from "@/hooks/useAuth";
 
 interface AppelDialogProps {
   open: boolean;
@@ -21,26 +30,56 @@ interface AppelDialogProps {
   student: Student | null;
 }
 
+const MOTIFS = [
+  { value: "PAIEMENT", label: "Paiement / Finance" },
+  { value: "ABSENCE", label: "Absence / Discipline" },
+  { value: "PEDAGOGIE", label: "Pédagogie / Notes" },
+  { value: "ADMINISTRATIF", label: "Administratif" },
+  { value: "AUTRE", label: "Autre" },
+] as const;
+
 export function AppelDialog({ open, onOpenChange, student }: AppelDialogProps) {
+  const { user } = useAuth();
+  const create = useCreateAppelParent();
+
   const [notes, setNotes] = useState("");
+  const [motif, setMotif] = useState<string>("PAIEMENT");
 
-  const handleSave = () => {
-    if (!student) return;
-    // TODO: integrate with backend Communication API when available
-    notify.success("Appel enregistré", {
-      description: `Appel enregistré pour ${student.prenom} ${student.nom}`,
-    });
-    setNotes("");
-    onOpenChange(false);
-  };
+  // Reset on open
+  useEffect(() => {
+    if (open) {
+      setNotes("");
+      setMotif("PAIEMENT");
+    }
+  }, [open]);
 
-  const handleOpenChange = (o: boolean) => {
-    if (!o) setNotes("");
-    onOpenChange(o);
+  const handleSave = async () => {
+    if (!student || !notes.trim()) return;
+    const appelePar = user
+      ? `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim() || user.email || undefined
+      : undefined;
+    try {
+      await create.mutateAsync({
+        eleveId: student.id,
+        appelePar,
+        telephone: student.telephoneParent ?? undefined,
+        motif,
+        notes: notes.trim(),
+      });
+      notify.success(
+        "Appel enregistré",
+        `Appel à ${student.prenomParent ?? ""} ${student.nomParent ?? student.nom}`.trim()
+      );
+      onOpenChange(false);
+    } catch (e) {
+      notify.error(
+        e instanceof Error ? e.message : "Erreur lors de l'enregistrement"
+      );
+    }
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -50,34 +89,50 @@ export function AppelDialog({ open, onOpenChange, student }: AppelDialogProps) {
           <DialogDescription>
             {student
               ? `Appel à ${student.prenomParent ?? ""} ${student.nomParent ?? student.nom} — ${
-                  student.telephoneParent ?? student.telephone
+                  student.telephoneParent ?? "(numéro non renseigné)"
                 }`
               : ""}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 mt-2">
-          {student && (
-            <div className="rounded-lg bg-muted/50 p-3 text-sm">
-              <p className="font-medium">
-                Numéro parent : {student.telephoneParent}
-              </p>
-              <p className="text-muted-foreground text-xs mt-1">
-                Élève : {student.prenom} {student.nom} ({student.classe})
-              </p>
-            </div>
-          )}
+          <div className="space-y-1.5">
+            <Label>Motif</Label>
+            <Select value={motif} onValueChange={setMotif}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {MOTIFS.map((m) => (
+                  <SelectItem key={m.value} value={m.value}>
+                    {m.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="appel-notes">Notes de l'appel</Label>
+            <Label htmlFor="appel-notes">Notes de l'appel *</Label>
             <Textarea
               id="appel-notes"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="Résumé de la conversation, engagements pris..."
+              placeholder="Résumé de la conversation, décisions prises, prochaine action…"
               rows={5}
             />
           </div>
+
+          {student && (
+            <div className="rounded-md bg-muted/40 p-2 text-xs text-muted-foreground">
+              <p>
+                Enregistré par :{" "}
+                <strong className="text-foreground">
+                  {user?.firstName} {user?.lastName}
+                </strong>
+              </p>
+            </div>
+          )}
         </div>
 
         <DialogFooter className="mt-2">
@@ -86,13 +141,13 @@ export function AppelDialog({ open, onOpenChange, student }: AppelDialogProps) {
           </DialogClose>
           <Button
             onClick={handleSave}
-            className="gap-1.5 bg-gradient-primary shadow-btn"
+            disabled={!notes.trim() || create.isPending}
           >
-            <Phone className="h-4 w-4" />
-            Enregistrer l'appel
+            {create.isPending ? "Enregistrement…" : "Enregistrer l'appel"}
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
 }
+

@@ -8,6 +8,7 @@ import type {
   RemplacementRequest,
   TimetableGenerateRequest,
   TimetableGenerateResponse,
+  TimetablePreviewCheck,
 } from "@/types/emploi-du-temps";
 
 const EDT_KEY = "emploi-du-temps";
@@ -111,5 +112,17 @@ export function useGenerateEmploi() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: [EDT_KEY] });
     },
+  });
+}
+
+export function useTimetablePreviewCheck(
+  params: { niveauId?: number; anneeScolaireId?: number },
+  enabled = true
+) {
+  return useQuery<TimetablePreviewCheck>({
+    queryKey: [EDT_KEY, "preview-check", params],
+    queryFn: () => emploiDuTempsApi.previewCheck(params),
+    enabled,
+    staleTime: 0, // always refetch when wizard opens — data may have changed
   });
 }

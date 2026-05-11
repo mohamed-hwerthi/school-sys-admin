@@ -11,6 +11,7 @@ import {
   Info,
   Plus,
   Trash2,
+  Pencil,
   MapPin,
   CalendarDays,
   Users,
@@ -41,6 +42,7 @@ import { useLanguage } from "@/hooks/useLanguage";
 import {
   useEvenements,
   useCreateEvenement,
+  useUpdateEvenement,
   useDeleteEvenement,
 } from "@/hooks/useEvenements";
 import type { EvenementType } from "@/types/evenement";
@@ -167,9 +169,11 @@ export default function Calendrier() {
   const { data: examens = [] } = useExamensRaw();
   const { data: customEvents = [] } = useEvenements();
   const createEvent = useCreateEvenement();
+  const updateEvent = useUpdateEvenement();
   const deleteEvent = useDeleteEvenement();
 
   const [showDialog, setShowDialog] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState<FormState>(initialForm);
   const [formErrors, setFormErrors] = useState<FormErrors>({});
 
@@ -261,9 +265,27 @@ export default function Calendrier() {
   };
 
   const handleOpenCreate = (prefillDate?: string) => {
+    setEditingId(null);
+    setFormErrors({});
     setForm({
       ...initialForm,
       dateDebut: prefillDate ?? todayStr,
+    });
+    setShowDialog(true);
+  };
+
+  const handleOpenEdit = (id: number) => {
+    const ev = customEvents.find((e) => e.id === id);
+    if (!ev) return;
+    setEditingId(id);
+    setFormErrors({});
+    setForm({
+      titre: ev.titre,
+      description: ev.description ?? "",
+      dateDebut: ev.dateDebut,
+      dateFin: ev.dateFin ?? "",
+      type: ev.type,
+      lieu: ev.lieu ?? "",
     });
     setShowDialog(true);
   };
@@ -276,24 +298,46 @@ export default function Calendrier() {
     if (Object.keys(errs).length) { setFormErrors(errs); return; }
     setFormErrors({});
 
-    createEvent.mutate(
-      {
-        titre: form.titre.trim(),
-        description: form.description.trim() || undefined,
-        dateDebut: form.dateDebut,
-        dateFin: form.dateFin || undefined,
-        type: form.type,
-        lieu: form.lieu.trim() || undefined,
-      },
-      {
+    const payload = {
+      titre: form.titre.trim(),
+      description: form.description.trim() || undefined,
+      dateDebut: form.dateDebut,
+      dateFin: form.dateFin || undefined,
+      type: form.type,
+      lieu: form.lieu.trim() || undefined,
+    };
+
+    if (editingId !== null) {
+      updateEvent.mutate(
+        { id: editingId, data: payload },
+        {
+          onSuccess: () => {
+            notify.success("Événement modifié");
+            setShowDialog(false);
+            setEditingId(null);
+            setForm(initialForm);
+          },
+          onError: () => notify.error("Erreur lors de la modification"),
+        }
+      );
+    } else {
+      createEvent.mutate(payload, {
         onSuccess: () => {
           notify.success("Événement ajouté");
           setShowDialog(false);
           setForm(initialForm);
         },
         onError: () => notify.error("Erreur lors de la création"),
-      }
-    );
+      });
+    }
+  };
+
+  const handleDialogOpenChange = (open: boolean) => {
+    setShowDialog(open);
+    if (!open) {
+      setEditingId(null);
+      setFormErrors({});
+    }
   };
 
   const handleDeleteCustom = (id: number) => {
@@ -497,15 +541,26 @@ export default function Calendrier() {
                           )}
                         </div>
                         {ev.type === "custom" && ev.customId && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-6 w-6 shrink-0 text-destructive hover:text-destructive"
-                            onClick={() => handleDeleteCustom(ev.customId!)}
-                            title="Supprimer"
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
+                          <div className="flex shrink-0 items-center gap-0.5">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6 text-muted-foreground hover:text-primary"
+                              onClick={() => handleOpenEdit(ev.customId!)}
+                              title="Modifier"
+                            >
+                              <Pencil className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6 text-destructive hover:text-destructive"
+                              onClick={() => handleDeleteCustom(ev.customId!)}
+                              title="Supprimer"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </div>
                         )}
                       </div>
                     );
@@ -571,16 +626,18 @@ export default function Calendrier() {
         </motion.div>
       </div>
 
-      {/* Create event dialog */}
-      <Dialog open={showDialog} onOpenChange={setShowDialog}>
+      {/* Create / edit event dialog */}
+      <Dialog open={showDialog} onOpenChange={handleDialogOpenChange}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <CalendarDays className="h-5 w-5" />
-              Nouvel événement
+              {editingId !== null ? "Modifier l'événement" : "Nouvel événement"}
             </DialogTitle>
             <DialogDescription>
-              Ajoutez un événement personnalisé au calendrier scolaire.
+              {editingId !== null
+                ? "Mettez à jour les informations de l'événement."
+                : "Ajoutez un événement personnalisé au calendrier scolaire."}
             </DialogDescription>
           </DialogHeader>
 
@@ -664,11 +721,16 @@ export default function Calendrier() {
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowDialog(false)}>
+            <Button variant="outline" onClick={() => handleDialogOpenChange(false)}>
               Annuler
             </Button>
-            <Button onClick={handleSubmit} disabled={createEvent.isPending}>
-              {createEvent.isPending ? "Création..." : "Créer"}
+            <Button
+              onClick={handleSubmit}
+              disabled={createEvent.isPending || updateEvent.isPending}
+            >
+              {editingId !== null
+                ? updateEvent.isPending ? "Modification..." : "Enregistrer"
+                : createEvent.isPending ? "Création..." : "Créer"}
             </Button>
           </DialogFooter>
         </DialogContent>

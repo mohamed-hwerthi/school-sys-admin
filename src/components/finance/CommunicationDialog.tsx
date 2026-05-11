@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { notify } from "@/lib/toast";
+import { integrationsApi } from "@/api/integrations.api";
 import type { Student } from "@/types/student";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -69,6 +70,7 @@ export function CommunicationDialog({
 
   const [objet, setObjet] = useState("");
   const [contenu, setContenu] = useState("");
+  const [sending, setSending] = useState(false);
 
   const applyTemplate = (templateIdx: string) => {
     const t = templates[Number(templateIdx)];
@@ -90,15 +92,47 @@ export function CommunicationDialog({
     setContenu(cont);
   };
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!student || !objet.trim() || !contenu.trim()) return;
-    // TODO: integrate with backend Communication API when available
-    notify.success(`${type} envoyé (simulation)`, {
-      description: `${type} envoyé pour ${student.prenom} ${student.nom}`,
-    });
-    setObjet("");
-    setContenu("");
-    onOpenChange(false);
+
+    // Validate destination is present (telephoneParent / emailParent)
+    if (type === "SMS" && !student.telephoneParent?.trim()) {
+      notify.error("Aucun numéro de téléphone parent renseigné");
+      return;
+    }
+    if (type === "Email" && !student.emailParent?.trim()) {
+      notify.error("Aucun email parent renseigné");
+      return;
+    }
+
+    setSending(true);
+    try {
+      if (type === "SMS") {
+        await integrationsApi.sendSms({
+          phoneNumber: student.telephoneParent!.trim(),
+          message: contenu,
+        });
+      } else {
+        await integrationsApi.sendEmail({
+          to: student.emailParent!.trim(),
+          subject: objet,
+          body: contenu,
+        });
+      }
+      notify.success(
+        `${type} envoyé`,
+        `À ${student.prenomParent ?? ""} ${student.nomParent ?? student.nom}`.trim()
+      );
+      setObjet("");
+      setContenu("");
+      onOpenChange(false);
+    } catch (e) {
+      notify.error(
+        e instanceof Error ? e.message : `Erreur lors de l'envoi du ${type}`
+      );
+    } finally {
+      setSending(false);
+    }
   };
 
   const handleOpenChange = (o: boolean) => {
@@ -172,11 +206,11 @@ export function CommunicationDialog({
           </DialogClose>
           <Button
             onClick={handleSend}
-            disabled={!objet.trim() || !contenu.trim()}
+            disabled={!objet.trim() || !contenu.trim() || sending}
             className="gap-1.5 bg-gradient-primary shadow-btn"
           >
             <Send className="h-4 w-4" />
-            Envoyer
+            {sending ? "Envoi…" : "Envoyer"}
           </Button>
         </DialogFooter>
       </DialogContent>

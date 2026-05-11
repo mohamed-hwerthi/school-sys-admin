@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   Building2,
@@ -9,6 +10,7 @@ import {
   PowerOff,
   ArrowUpDown,
   Eye,
+  Plus,
 } from "lucide-react";
 import { notify } from "@/lib/toast";
 import { Button } from "@/components/ui/button";
@@ -40,6 +42,7 @@ import {
 } from "@/hooks/useSaas";
 import type { TenantResponse } from "@/types/saas";
 import { useLanguage } from "@/hooks/useLanguage";
+import { CURRENCY } from "@/config/currency";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
@@ -120,7 +123,7 @@ export default function SuperAdminDashboard() {
     },
     {
       label: t("superAdmin.monthlyRevenue"),
-      value: `${(dashboard?.revenueMonthly ?? 0).toFixed(2)} DH`,
+      value: `${(dashboard?.revenueMonthly ?? 0).toFixed(2)} ${CURRENCY}`,
       icon: DollarSign,
       bg: "bg-amber-50",
       text: "text-amber-600",
@@ -134,14 +137,26 @@ export default function SuperAdminDashboard() {
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35 }}
+        className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
       >
-        <h1 className="font-heading text-xl md:text-2xl font-bold text-foreground flex items-center gap-2">
-          <Building2 className="h-6 w-6 text-primary" />
-          {t("superAdmin.title")}
-        </h1>
-        <p className="text-sm text-muted-foreground mt-0.5">
-          {t("superAdmin.title")}
-        </p>
+        <div>
+          <h1 className="font-heading text-xl md:text-2xl font-bold text-foreground flex items-center gap-2">
+            <Building2 className="h-6 w-6 text-primary" />
+            {t("superAdmin.title")}
+          </h1>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            {t("superAdmin.title")}
+          </p>
+        </div>
+        <Button
+          asChild
+          className="gap-1.5 bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 self-start sm:self-auto"
+        >
+          <Link to="/onboarding">
+            <Plus className="h-4 w-4" />
+            Nouvelle école
+          </Link>
+        </Button>
       </motion.div>
 
       {/* Stats Cards */}
@@ -228,7 +243,7 @@ export default function SuperAdminDashboard() {
                     </span>
                   </td>
                   <td className="py-3 px-3 font-medium">
-                    {(tenant.monthlyRate ?? 0).toFixed(2)} DH/mois
+                    {(tenant.monthlyRate ?? 0).toFixed(2)} {CURRENCY}/mois
                   </td>
                   <td className="py-3 px-3 text-xs text-muted-foreground">
                     <div>{tenant.maxStudents ?? 50} eleves</div>
@@ -267,9 +282,15 @@ export default function SuperAdminDashboard() {
               ))}
               {(!tenants || tenants.length === 0) && (
                 <tr>
-                  <td colSpan={6} className="py-8 text-center text-muted-foreground">
+                  <td colSpan={6} className="py-10 text-center text-muted-foreground">
                     <Building2 className="h-8 w-8 mx-auto mb-2 opacity-30" />
-                    Aucune ecole enregistree
+                    <p className="mb-3">Aucune ecole enregistree</p>
+                    <Button asChild size="sm" className="gap-1.5 bg-gradient-to-r from-violet-500 to-purple-600">
+                      <Link to="/onboarding">
+                        <Plus className="h-4 w-4" />
+                        Créer la première école
+                      </Link>
+                    </Button>
                   </td>
                 </tr>
               )}

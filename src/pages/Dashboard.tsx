@@ -83,21 +83,28 @@ const FALLBACK_LEVEL_DISTRIBUTION = [
 
 const NIVEAU_COLORS = ["#8b5cf6", "#3b82f6", "#06b6d4", "#10b981", "#f59e0b", "#ef4444", "#ec4899", "#6366f1"];
 
-const recentStudents = [
-  { nom: "Amira Benali", classe: "3A", date: "18/02/2026", statut: "Inscrit", avatar: "AB" },
-  { nom: "Youssef El Fassi", classe: "5B", date: "17/02/2026", statut: "Inscrit", avatar: "YE" },
-  { nom: "Fatima Zahra Idrissi", classe: "1A", date: "16/02/2026", statut: "En attente", avatar: "FI" },
-  { nom: "Omar Chakir", classe: "4C", date: "15/02/2026", statut: "Inscrit", avatar: "OC" },
-  { nom: "Salma Tazi", classe: "2B", date: "14/02/2026", statut: "Inscrit", avatar: "ST" },
-  { nom: "Amine Berrada", classe: "6A", date: "13/02/2026", statut: "En attente", avatar: "AB" },
-];
+const EVENT_BAR_COLORS = ["bg-violet-500", "bg-blue-500", "bg-amber-500", "bg-emerald-500", "bg-rose-500"];
+const FR_MONTH_SHORT = ["Jan", "Fév", "Mar", "Avr", "Mai", "Juin", "Juil", "Août", "Sep", "Oct", "Nov", "Déc"];
 
-const upcomingEvents = [
-  { titre: "Conseil de classe - 3ème année", date: "22 Fév", heure: "14:00", color: "bg-violet-500" },
-  { titre: "Réunion parents-enseignants", date: "25 Fév", heure: "17:00", color: "bg-blue-500" },
-  { titre: "Examen trimestriel", date: "01 Mar", heure: "08:00", color: "bg-amber-500" },
-  { titre: "Journée portes ouvertes", date: "05 Mar", heure: "09:00", color: "bg-emerald-500" },
-];
+function initials(fullName: string): string {
+  const parts = fullName.trim().split(/\s+/);
+  const first = parts[0]?.[0] ?? "";
+  const last = parts.length > 1 ? parts[parts.length - 1][0] : "";
+  return (first + last).toUpperCase();
+}
+
+function formatDateFr(iso: string | null | undefined): string {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "—";
+  return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
+}
+
+function eventDateParts(iso: string): { day: string; month: string } {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return { day: "—", month: "" };
+  return { day: String(d.getDate()).padStart(2, "0"), month: FR_MONTH_SHORT[d.getMonth()] };
+}
 
 /* FALLBACK_QUICK_STATS moved inside component to access t() */
 
@@ -168,11 +175,34 @@ export default function Dashboard() {
 
   const dynamicQuickStats = dashboardStats
     ? [
-        { ...FALLBACK_QUICK_STATS[0], value: String(Math.round(dashboardStats.tauxAbsence)) },
-        { ...FALLBACK_QUICK_STATS[1], value: String(dashboardStats.totalStudents) },
-        { ...FALLBACK_QUICK_STATS[2] },
+        { ...FALLBACK_QUICK_STATS[0], value: String(dashboardStats.absencesToday ?? 0) },
+        { ...FALLBACK_QUICK_STATS[1], value: String(dashboardStats.newEnrollmentsThisMonth ?? 0) },
+        { ...FALLBACK_QUICK_STATS[2], value: String(dashboardStats.eventsThisMonth ?? 0) },
       ]
     : FALLBACK_QUICK_STATS;
+
+  const weeklyAttendanceData = dashboardStats?.weeklyAttendance?.length
+    ? dashboardStats.weeklyAttendance.map((d) => ({ jour: d.jour, présents: d.presents, absents: d.absents }))
+    : FALLBACK_ATTENDANCE;
+
+  const upcomingEvents = (dashboardStats?.upcomingEvents ?? []).map((e, i) => {
+    const { day, month } = eventDateParts(e.dateDebut);
+    return {
+      titre: e.titre,
+      day,
+      month,
+      lieu: e.lieu,
+      color: EVENT_BAR_COLORS[i % EVENT_BAR_COLORS.length],
+    };
+  });
+
+  const recentStudents = (dashboardStats?.recentStudents ?? []).map((s) => ({
+    nom: s.fullName,
+    classe: s.classe ?? "—",
+    date: formatDateFr(s.enrollmentDate),
+    statut: s.statut ?? "—",
+    avatar: initials(s.fullName),
+  }));
 
   const dynamicAttendanceRadial = dashboardStats
     ? [{ name: "Presents", value: Math.round((100 - dashboardStats.tauxAbsence) * 10) / 10, fill: "#10b981" }]
@@ -286,7 +316,7 @@ export default function Dashboard() {
             </div>
           </div>
           <ResponsiveContainer width="100%" height={280}>
-            <BarChart data={FALLBACK_ATTENDANCE} barGap={8} barSize={32}>
+            <BarChart data={weeklyAttendanceData} barGap={8} barSize={32}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(220 15% 93%)" vertical={false} />
               <XAxis dataKey="jour" tick={{ fontSize: 12, fill: "hsl(220 10% 55%)" }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize: 11, fill: "hsl(220 10% 55%)" }} axisLine={false} tickLine={false} />
@@ -412,22 +442,30 @@ export default function Dashboard() {
             </span>
           </div>
           <div className="space-y-2.5 flex-1">
-            {upcomingEvents.map((event) => (
-              <div key={event.titre} className="flex gap-3 rounded-xl bg-muted/40 hover:bg-muted/70 transition-colors p-3 group cursor-pointer">
-                <div className="flex flex-col items-center justify-center w-12 shrink-0">
-                  <span className="text-[10px] font-medium text-muted-foreground uppercase leading-tight">{event.date.split(" ")[1]}</span>
-                  <span className="font-heading text-xl font-bold text-foreground leading-tight">{event.date.split(" ")[0]}</span>
-                </div>
-                <div className={`w-0.5 self-stretch rounded-full ${event.color}`} />
-                <div className="flex-1 min-w-0 flex flex-col justify-center">
-                  <p className="text-sm font-medium text-foreground truncate group-hover:text-primary transition-colors">{event.titre}</p>
-                  <p className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
-                    <Clock className="h-3 w-3" />
-                    {event.heure}
-                  </p>
-                </div>
+            {upcomingEvents.length === 0 ? (
+              <div className="flex items-center justify-center h-full text-xs text-muted-foreground py-8">
+                {statsLoading ? t("dashboard.loadingTrends") : t("dashboard.noEvents")}
               </div>
-            ))}
+            ) : (
+              upcomingEvents.map((event, i) => (
+                <div key={`${event.titre}-${i}`} className="flex gap-3 rounded-xl bg-muted/40 hover:bg-muted/70 transition-colors p-3 group cursor-pointer">
+                  <div className="flex flex-col items-center justify-center w-12 shrink-0">
+                    <span className="text-[10px] font-medium text-muted-foreground uppercase leading-tight">{event.month}</span>
+                    <span className="font-heading text-xl font-bold text-foreground leading-tight">{event.day}</span>
+                  </div>
+                  <div className={`w-0.5 self-stretch rounded-full ${event.color}`} />
+                  <div className="flex-1 min-w-0 flex flex-col justify-center">
+                    <p className="text-sm font-medium text-foreground truncate group-hover:text-primary transition-colors">{event.titre}</p>
+                    {event.lieu && (
+                      <p className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
+                        <Clock className="h-3 w-3" />
+                        {event.lieu}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ))
+            )}
           </div>
           {/* Attendance gauge */}
           <div className="mt-4 pt-4 border-t border-border/40 flex items-center gap-4">
@@ -473,39 +511,50 @@ export default function Dashboard() {
               </tr>
             </thead>
             <tbody>
-              {recentStudents.map((student, i) => (
-                <tr
-                  key={student.nom}
-                  className="border-b border-border/30 last:border-0 hover:bg-muted/30 transition-colors"
-                >
-                  <td className="py-3 px-3">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-purple-600 text-[11px] font-bold text-white shrink-0">
-                        {student.avatar}
-                      </div>
-                      <span className="font-medium text-foreground">{student.nom}</span>
-                    </div>
-                  </td>
-                  <td className="py-3 px-3">
-                    <span className="inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-foreground">
-                      {student.classe}
-                    </span>
-                  </td>
-                  <td className="py-3 px-3 text-muted-foreground">{student.date}</td>
-                  <td className="py-3 px-3">
-                    <span
-                      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ${
-                        student.statut === "Inscrit"
-                          ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200"
-                          : "bg-amber-50 text-amber-700 ring-1 ring-amber-200"
-                      }`}
-                    >
-                      <span className={`h-1.5 w-1.5 rounded-full ${student.statut === "Inscrit" ? "bg-emerald-500" : "bg-amber-500"}`} />
-                      {student.statut}
-                    </span>
+              {recentStudents.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="py-8 text-center text-xs text-muted-foreground">
+                    {statsLoading ? t("dashboard.loadingTrends") : t("dashboard.noRecentStudents")}
                   </td>
                 </tr>
-              ))}
+              ) : (
+                recentStudents.map((student, i) => {
+                  const isActive = student.statut === "Actif" || student.statut === "Inscrit";
+                  return (
+                    <tr
+                      key={`${student.nom}-${i}`}
+                      className="border-b border-border/30 last:border-0 hover:bg-muted/30 transition-colors"
+                    >
+                      <td className="py-3 px-3">
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-purple-600 text-[11px] font-bold text-white shrink-0">
+                            {student.avatar}
+                          </div>
+                          <span className="font-medium text-foreground">{student.nom}</span>
+                        </div>
+                      </td>
+                      <td className="py-3 px-3">
+                        <span className="inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-foreground">
+                          {student.classe}
+                        </span>
+                      </td>
+                      <td className="py-3 px-3 text-muted-foreground">{student.date}</td>
+                      <td className="py-3 px-3">
+                        <span
+                          className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ${
+                            isActive
+                              ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200"
+                              : "bg-amber-50 text-amber-700 ring-1 ring-amber-200"
+                          }`}
+                        >
+                          <span className={`h-1.5 w-1.5 rounded-full ${isActive ? "bg-emerald-500" : "bg-amber-500"}`} />
+                          {student.statut}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
             </tbody>
           </table>
         </div>

@@ -1,3 +1,26 @@
+export interface DayAttendance {
+  jour: string;
+  presents: number;
+  absents: number;
+}
+
+export interface UpcomingEvent {
+  id: number;
+  titre: string;
+  dateDebut: string;
+  couleur: string | null;
+  type: string | null;
+  lieu: string | null;
+}
+
+export interface RecentStudent {
+  id: number;
+  fullName: string;
+  classe: string | null;
+  enrollmentDate: string | null;
+  statut: string | null;
+}
+
 export interface DashboardStats {
   totalStudents: number;
   totalTeachers: number;
@@ -8,6 +31,12 @@ export interface DashboardStats {
   tauxAbsence: number;
   moyenneGenerale: number;
   studentsByNiveau: Record<string, number>;
+  absencesToday: number;
+  newEnrollmentsThisMonth: number;
+  eventsThisMonth: number;
+  weeklyAttendance: DayAttendance[];
+  upcomingEvents: UpcomingEvent[];
+  recentStudents: RecentStudent[];
 }
 
 export interface MonthlyTrend {

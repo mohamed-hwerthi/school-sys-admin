@@ -120,9 +120,11 @@ export function Navbar() {
   }, [logout, navigate]);
 
   const initials = user
-    ? `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`.toUpperCase()
+    ? (`${(user.firstName ?? "").charAt(0)}${(user.lastName ?? "").charAt(0)}`.toUpperCase() || "??")
     : "??";
-  const displayName = user ? `${user.firstName} ${user.lastName}` : "Utilisateur";
+  const displayName = user
+    ? `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim() || user.email || "Utilisateur"
+    : "Utilisateur";
   const displayRole = user?.role?.replace("_", " ") ?? "";
 
   const toggleFullscreen = useCallback(() => {

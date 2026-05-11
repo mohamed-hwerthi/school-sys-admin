@@ -55,8 +55,12 @@ export interface TeachingAssignment {
 }
 
 export interface TimetableGenerateRequest {
-  assignments: TeachingAssignment[];
-  rooms: string[];
+  // Legacy mode — caller provides assignments/rooms explicitly
+  assignments?: TeachingAssignment[];
+  rooms?: string[];
+  // Auto mode — service loads from DB
+  niveauId?: number;
+  anneeScolaireId?: number;
   solverTimeoutSeconds?: number;
 }
 
@@ -65,4 +69,26 @@ export interface TimetableGenerateResponse {
   score: string;
   entries: EmploiDuTempsEntry[];
   unresolvedConflicts: string[];
+}
+
+export interface TimetablePreviewCheck {
+  anneeScolaireId: number | null;
+  anneeScolaireLabel: string | null;
+  niveauId: number | null;
+  niveauName: string | null;
+  totalModules: number;
+  modulesWithVolume: number;
+  volumesWithoutTeacher: number;
+  totalLessonsToSchedule: number;
+  totalTeachersInvolved: number;
+  teachersWithoutDispos: number;
+  teachersWithoutDisposList: { id: number; name: string }[];
+  totalAvailableRooms: number;
+  roomsByType: Record<string, number>;
+  missingRoomTypes: string[];
+  courseSlotsPerWeek: number;
+  totalSlotCapacity: number;
+  canGenerate: boolean;
+  blockers: string[];
+  warnings: string[];
 }

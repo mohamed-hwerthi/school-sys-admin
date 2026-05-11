@@ -351,7 +351,7 @@ function CircuitsTab() {
                 <Input type="number" value={form.distanceKm || ""} onChange={(e) => setForm({ ...form, distanceKm: e.target.value ? Number(e.target.value) : undefined })} />
               </div>
               <div className="space-y-1.5">
-                <Label>Cout mensuel (DH)</Label>
+                <Label>Cout mensuel (TND)</Label>
                 <Input type="number" value={form.coutMensuel || ""} onChange={(e) => setForm({ ...form, coutMensuel: e.target.value ? Number(e.target.value) : undefined })} />
               </div>
             </div>

@@ -18,7 +18,7 @@ export function AppSidebar() {
   const navigate = useNavigate();
   const { toggleSidebar } = useSidebar();
   const { user, logout } = useAuth();
-  const { t } = useLanguage();
+  const { t, isRTL } = useLanguage();
   const [search, setSearch] = useState("");
 
   // Find which section contains the active route
@@ -52,23 +52,33 @@ export function AppSidebar() {
     return true;
   };
 
-  // TODO: re-enable role-based filtering once roles are finalized.
-  // For now, show all sidebar items; only apply the search filter.
+  // Role-based filtering + search filtering.
+  // - A section is hidden if its `roles` excludes the user's role.
+  // - Inside a kept section, items with their own `roles` are filtered too.
+  // - Sections that end up empty are dropped entirely.
+  const userRole = user?.role;
+  const roleAllows = (allowed?: string[]) =>
+    !allowed || allowed.length === 0 || (userRole != null && allowed.includes(userRole));
+
   const filteredSections = useMemo(() => {
     const q = search.toLowerCase().trim();
     return sidebarSections
+      .filter((section) => roleAllows(section.roles))
       .map((section) => ({
         ...section,
-        items: section.items.filter(
-          (item) =>
-            !q ||
-            t(item.titleKey).toLowerCase().includes(q) ||
-            t(section.labelKey).toLowerCase().includes(q) ||
-            item.title.toLowerCase().includes(q)
-        ),
+        items: section.items
+          .filter((item) => roleAllows(item.roles))
+          .filter(
+            (item) =>
+              !q ||
+              t(item.titleKey).toLowerCase().includes(q) ||
+              t(section.labelKey).toLowerCase().includes(q) ||
+              item.title.toLowerCase().includes(q)
+          ),
       }))
       .filter((s) => s.items.length > 0);
-  }, [search, t]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search, t, userRole]);
 
   // Auto-open sections when searching
   useMemo(() => {
@@ -84,10 +94,12 @@ export function AppSidebar() {
     navigate("/");
   };
 
-  const initials = user ? `${user.firstName.charAt(0)}${user.lastName.charAt(0)}` : "?";
+  const initials = user
+    ? `${(user.firstName ?? "").charAt(0)}${(user.lastName ?? "").charAt(0)}`.trim() || "?"
+    : "?";
 
   return (
-    <Sidebar collapsible="icon" className="border-r-0">
+    <Sidebar collapsible="icon" side={isRTL ? "right" : "left"} className="border-r-0">
       {/* ── Header ── */}
       <SidebarHeader className="px-4 pt-5 pb-3">
         <div className="flex items-center justify-between group-data-[collapsible=icon]:justify-center">

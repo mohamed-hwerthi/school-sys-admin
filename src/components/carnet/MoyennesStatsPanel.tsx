@@ -166,7 +166,10 @@ export default function MoyennesStatsPanel({ bulletins, classeId, trimestre, sta
   // Build module options from bulletins (only modules actually graded for this class)
   const moduleOptions = useMemo(() => {
     const seen = new Map<number, string>();
-    bulletins.forEach((b) => b.domaines.forEach((d) => d.modules.forEach((m) => seen.set(m.moduleId, m.moduleName))));
+    bulletins.forEach((b) => {
+      b.domaines.forEach((d) => d.modules.forEach((m) => seen.set(m.moduleId, m.moduleName)));
+      b.modulesHorsDomaine?.forEach((m) => seen.set(m.moduleId, m.moduleName));
+    });
     return Array.from(seen.entries()).map(([id, name]) => ({ id, name }));
   }, [bulletins]);
 
@@ -179,6 +182,8 @@ export default function MoyennesStatsPanel({ bulletins, classeId, trimestre, sta
         const m = d.modules.find((mm) => mm.moduleId === statsModuleId);
         if (m && m.moyenneModule != null) vals.push(m.moyenneModule);
       });
+      const hm = b.modulesHorsDomaine?.find((mm) => mm.moduleId === statsModuleId);
+      if (hm && hm.moyenneModule != null) vals.push(hm.moyenneModule);
     });
     return vals;
   }, [bulletins, statsModuleId]);
@@ -190,6 +195,8 @@ export default function MoyennesStatsPanel({ bulletins, classeId, trimestre, sta
         const m = d.modules.find((mm) => mm.moduleId === statsModuleId);
         if (m && m.moyenneModule != null) list.push({ name: b.studentName, value: m.moyenneModule });
       });
+      const hm = b.modulesHorsDomaine?.find((mm) => mm.moduleId === statsModuleId);
+      if (hm && hm.moyenneModule != null) list.push({ name: b.studentName, value: hm.moyenneModule });
     });
     return list;
   }, [bulletins, statsModuleId]);
@@ -226,7 +233,7 @@ export default function MoyennesStatsPanel({ bulletins, classeId, trimestre, sta
         <BarChart3 className="h-4 w-4 text-blue-600" />
         <span className="font-semibold text-sm text-foreground">Statistiques détaillées</span>
         <span className="ms-auto text-xs text-muted-foreground">
-          {scope === "examen" ? "par examen" : "par module"}
+          {scope === "examen" ? "par examen" : "par matière"}
         </span>
       </button>
 
@@ -244,7 +251,7 @@ export default function MoyennesStatsPanel({ bulletins, classeId, trimestre, sta
                     : "border-border/50 bg-background text-muted-foreground hover:border-border hover:text-foreground"
                 }`}
               >
-                {s === "module" ? "Par module" : "Par examen"}
+                {s === "module" ? "Par matière" : "Par examen"}
               </button>
             ))}
           </div>
@@ -252,7 +259,7 @@ export default function MoyennesStatsPanel({ bulletins, classeId, trimestre, sta
           <div className="flex flex-col sm:flex-row gap-2">
             <Select value={statsModuleId ? String(statsModuleId) : ""} onValueChange={(v) => setStatsModuleId(Number(v))}>
               <SelectTrigger className="w-full sm:w-[260px]">
-                <SelectValue placeholder="Sélectionner un module" />
+                <SelectValue placeholder="Sélectionner une matière" />
               </SelectTrigger>
               <SelectContent>
                 {moduleOptions.map((m) => (
@@ -263,7 +270,7 @@ export default function MoyennesStatsPanel({ bulletins, classeId, trimestre, sta
             {scope === "examen" && (
               <Select value={statsExamenId ? String(statsExamenId) : ""} onValueChange={(v) => setStatsExamenId(Number(v))} disabled={!statsModuleId}>
                 <SelectTrigger className="w-full sm:w-[260px]">
-                  <SelectValue placeholder={statsModuleId ? "Sélectionner un examen" : "Choisir un module d'abord"} />
+                  <SelectValue placeholder={statsModuleId ? "Sélectionner un examen" : "Choisir une matière d'abord"} />
                 </SelectTrigger>
                 <SelectContent>
                   {examensList.map((e) => (
@@ -275,11 +282,11 @@ export default function MoyennesStatsPanel({ bulletins, classeId, trimestre, sta
           </div>
 
           {scope === "module" && statsModuleId > 0 && (
-            <StatsBlock title={`Module : ${selectedModuleName}`} values={moduleValues} top={moduleTop} />
+            <StatsBlock title={`Matière : ${selectedModuleName}`} values={moduleValues} top={moduleTop} />
           )}
           {scope === "module" && statsModuleId === 0 && (
             <div className="rounded-lg border border-border/50 bg-card p-8 text-center text-sm text-muted-foreground">
-              Sélectionnez un module pour voir ses statistiques
+              Sélectionnez une matière pour voir ses statistiques
             </div>
           )}
           {scope === "examen" && statsExamenId > 0 && (
@@ -292,7 +299,7 @@ export default function MoyennesStatsPanel({ bulletins, classeId, trimestre, sta
           )}
           {scope === "examen" && statsExamenId === 0 && (
             <div className="rounded-lg border border-border/50 bg-card p-8 text-center text-sm text-muted-foreground">
-              Sélectionnez un module puis un examen pour voir ses statistiques
+              Sélectionnez une matière puis un examen pour voir ses statistiques
             </div>
           )}
         </div>

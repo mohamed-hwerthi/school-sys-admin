@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { PermissionGate } from "@/components/auth/Gates";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -386,10 +387,12 @@ export default function DevoirsPage() {
             <Upload className="h-4 w-4" />
             {t("homework.resources")}
           </Button>
-          <Button size="sm" className="gap-1.5 bg-gradient-primary shadow-btn" onClick={openCreateDevoir}>
-            <Plus className="h-4 w-4" />
-            {t("homework.newHomework")}
-          </Button>
+          <PermissionGate perms={["MANAGE_DEVOIRS"]}>
+            <Button size="sm" className="gap-1.5 bg-gradient-primary shadow-btn" onClick={openCreateDevoir}>
+              <Plus className="h-4 w-4" />
+              {t("homework.newHomework")}
+            </Button>
+          </PermissionGate>
         </div>
       </motion.div>
 
@@ -530,17 +533,19 @@ export default function DevoirsPage() {
                         <td className="py-3 px-4 hidden lg:table-cell text-muted-foreground">{devoir.totalSoumissions}</td>
                         <td className="py-3 px-4 text-end">
                           <div className="hidden sm:flex items-center justify-end gap-1">
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => openEditDevoir(devoir)}>
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            {devoir.statut === "PUBLIE" && (
-                              <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-orange-600" onClick={() => closeDevoir.mutate(devoir.id)}>
-                                <Lock className="h-4 w-4" />
+                            <PermissionGate perms={["MANAGE_DEVOIRS"]}>
+                              <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => openEditDevoir(devoir)}>
+                                <Edit className="h-4 w-4" />
                               </Button>
-                            )}
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-red-600" onClick={() => setDeleteTarget(devoir)}>
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+                              {devoir.statut === "PUBLIE" && (
+                                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-orange-600" onClick={() => closeDevoir.mutate(devoir.id)}>
+                                  <Lock className="h-4 w-4" />
+                                </Button>
+                              )}
+                              <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-red-600" onClick={() => setDeleteTarget(devoir)}>
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </PermissionGate>
                           </div>
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
@@ -858,7 +863,7 @@ export default function DevoirsPage() {
                 </Select>
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="moduleId">Module</Label>
+                <Label htmlFor="moduleId">Matière</Label>
                 <Select
                   value={devoirForm.moduleId ? String(devoirForm.moduleId) : "none"}
                   onValueChange={(v) => setDevoirForm({ ...devoirForm, moduleId: v === "none" ? undefined : Number(v) })}
@@ -1027,7 +1032,7 @@ export default function DevoirsPage() {
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="resModuleId">Module</Label>
+              <Label htmlFor="resModuleId">Matière</Label>
               <Select
                 value={ressourceForm.moduleId ? String(ressourceForm.moduleId) : "none"}
                 onValueChange={(v) => setRessourceForm({ ...ressourceForm, moduleId: v === "none" ? undefined : Number(v) })}

@@ -19,6 +19,7 @@ import {
   ArrowRightLeft,
   Users,
 } from "lucide-react";
+import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -75,6 +76,26 @@ const fadeUp = {
     transition: { delay: i * 0.06, duration: 0.35 },
   }),
 };
+
+/**
+ * Extracts the leading number from a niveau name (e.g. "1ère année" → 1).
+ * Used to enforce the "no skip level" rule on passages.
+ */
+function leadingDigit(nom: string | null | undefined): number | null {
+  if (!nom) return null;
+  const m = nom.match(/(\d+)/);
+  return m ? Number(m[1]) : null;
+}
+
+/**
+ * Returns the niveau whose leading digit is exactly current+1, or null if none.
+ * Mirrors the backend rule in PassageService.nextNiveauName.
+ */
+function nextNiveauName(current: string, niveaux: { nom: string }[]): string | null {
+  const cur = leadingDigit(current);
+  if (cur == null) return null;
+  return niveaux.find((n) => leadingDigit(n.nom) === cur + 1)?.nom ?? null;
+}
 
 export default function AnneeScolairePage() {
   const [selectedAnneeId, setSelectedAnneeId] = useState(0);
@@ -558,11 +579,19 @@ export default function AnneeScolairePage() {
               <Label>Eleve</Label>
               <Select value={passageForm.studentId > 0 ? String(passageForm.studentId) : ""} onValueChange={(v) => {
                 const student = allStudents.find((s) => s.id === Number(v));
+                const ancien = student?.niveau || "";
+                const auto = passageForm.decision === "PASSAGE"
+                  ? (nextNiveauName(ancien, niveaux) ?? "")
+                  : passageForm.decision === "REDOUBLEMENT"
+                    ? ancien
+                    : passageForm.nouveauNiveau;
                 setPassageForm({
                   ...passageForm,
                   studentId: Number(v),
-                  ancienNiveau: student?.niveau || "",
+                  ancienNiveau: ancien,
                   ancienneClasse: student?.classe || "",
+                  nouveauNiveau: auto,
+                  nouvelleClasse: "",
                 });
               }}>
                 <SelectTrigger><SelectValue placeholder="Selectionner un eleve..." /></SelectTrigger>
@@ -575,7 +604,15 @@ export default function AnneeScolairePage() {
             </div>
             <div className="space-y-1.5">
               <Label>Decision</Label>
-              <Select value={passageForm.decision} onValueChange={(v) => setPassageForm({ ...passageForm, decision: v as typeof passageForm.decision })}>
+              <Select value={passageForm.decision} onValueChange={(v) => {
+                const decision = v as typeof passageForm.decision;
+                const auto = decision === "PASSAGE"
+                  ? (nextNiveauName(passageForm.ancienNiveau, niveaux) ?? "")
+                  : decision === "REDOUBLEMENT"
+                    ? passageForm.ancienNiveau
+                    : passageForm.nouveauNiveau;
+                setPassageForm({ ...passageForm, decision, nouveauNiveau: auto, nouvelleClasse: "" });
+              }}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="PASSAGE">Passage</SelectItem>
@@ -585,17 +622,32 @@ export default function AnneeScolairePage() {
                 </SelectContent>
               </Select>
             </div>
+            {passageForm.decision === "PASSAGE" && passageForm.ancienNiveau && !nextNiveauName(passageForm.ancienNiveau, niveaux) && (
+              <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                Aucun niveau supérieur n'est configuré après « {passageForm.ancienNiveau} ». Choisissez une autre décision.
+              </div>
+            )}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label>Nouveau niveau</Label>
                 <Select
                   value={passageForm.nouveauNiveau}
                   onValueChange={(v) => setPassageForm({ ...passageForm, nouveauNiveau: v, nouvelleClasse: "" })}
+                  disabled={passageForm.decision === "PASSAGE" || passageForm.decision === "REDOUBLEMENT"}
                 >
                   <SelectTrigger><SelectValue placeholder="Sélectionner un niveau..." /></SelectTrigger>
                   <SelectContent>
-                    {niveaux.map((n) => (
-                      <SelectItem key={n.id} value={n.nom}>{n.nom}</SelectItem>
+                    {(() => {
+                      if (passageForm.decision === "PASSAGE") {
+                        const next = nextNiveauName(passageForm.ancienNiveau, niveaux);
+                        return next ? [next] : [];
+                      }
+                      if (passageForm.decision === "REDOUBLEMENT") {
+                        return passageForm.ancienNiveau ? [passageForm.ancienNiveau] : [];
+                      }
+                      return niveaux.map((n) => n.nom);
+                    })().map((nom) => (
+                      <SelectItem key={nom} value={nom}>{nom}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -633,8 +685,16 @@ export default function AnneeScolairePage() {
                 decision: passageForm.decision,
                 anneeScolaire: selectedAnneeLabel,
                 motif: passageForm.motif,
-              }, { onSuccess: () => setPassageFormOpen(false) });
-            }} disabled={createPassageMutation.isPending || !passageForm.studentId}>
+              }, {
+                onSuccess: () => { toast.success("Passage enregistré"); setPassageFormOpen(false); },
+                onError: (err: any) => toast.error(err?.response?.data?.message || err?.message || "Erreur lors de l'enregistrement"),
+              });
+            }} disabled={
+              createPassageMutation.isPending
+              || !passageForm.studentId
+              || (passageForm.decision === "PASSAGE" && !nextNiveauName(passageForm.ancienNiveau, niveaux))
+              || ((passageForm.decision === "PASSAGE" || passageForm.decision === "REDOUBLEMENT") && !passageForm.nouveauNiveau)
+            }>
               {createPassageMutation.isPending ? "Enregistrement..." : "Enregistrer"}
             </Button>
           </DialogFooter>
@@ -653,7 +713,17 @@ export default function AnneeScolairePage() {
           <div className="space-y-4 py-2">
             <div className="space-y-1.5">
               <Label>Classe</Label>
-              <Select value={bulkClasse} onValueChange={setBulkClasse}>
+              <Select value={bulkClasse} onValueChange={(c) => {
+                setBulkClasse(c);
+                const classNiveau = allStudents.find((s) => s.classe === c)?.niveau || "";
+                const auto = bulkDecision === "PASSAGE"
+                  ? (nextNiveauName(classNiveau, niveaux) ?? "")
+                  : bulkDecision === "REDOUBLEMENT"
+                    ? classNiveau
+                    : bulkNouveauNiveau;
+                setBulkNouveauNiveau(auto);
+                setBulkNouvelleClasse("");
+              }}>
                 <SelectTrigger><SelectValue placeholder="Selectionner une classe..." /></SelectTrigger>
                 <SelectContent>
                   {[...new Set(allStudents.map((s) => s.classe).filter(Boolean))].sort().map((c) => (
@@ -674,7 +744,18 @@ export default function AnneeScolairePage() {
             )}
             <div className="space-y-1.5">
               <Label>Decision</Label>
-              <Select value={bulkDecision} onValueChange={(v) => setBulkDecision(v as typeof bulkDecision)}>
+              <Select value={bulkDecision} onValueChange={(v) => {
+                const decision = v as typeof bulkDecision;
+                const classNiveau = studentsInClasse[0]?.niveau || "";
+                const auto = decision === "PASSAGE"
+                  ? (nextNiveauName(classNiveau, niveaux) ?? "")
+                  : decision === "REDOUBLEMENT"
+                    ? classNiveau
+                    : bulkNouveauNiveau;
+                setBulkDecision(decision);
+                setBulkNouveauNiveau(auto);
+                setBulkNouvelleClasse("");
+              }}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="PASSAGE">Passage</SelectItem>
@@ -684,17 +765,38 @@ export default function AnneeScolairePage() {
                 </SelectContent>
               </Select>
             </div>
+            {(() => {
+              const classNiveau = studentsInClasse[0]?.niveau || "";
+              if (bulkDecision !== "PASSAGE" || !classNiveau) return null;
+              if (nextNiveauName(classNiveau, niveaux)) return null;
+              return (
+                <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                  Aucun niveau supérieur n'est configuré après « {classNiveau} ». Choisissez une autre décision.
+                </div>
+              );
+            })()}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label>Nouveau niveau</Label>
                 <Select
                   value={bulkNouveauNiveau}
                   onValueChange={(v) => { setBulkNouveauNiveau(v); setBulkNouvelleClasse(""); }}
+                  disabled={bulkDecision === "PASSAGE" || bulkDecision === "REDOUBLEMENT"}
                 >
                   <SelectTrigger><SelectValue placeholder="Sélectionner un niveau..." /></SelectTrigger>
                   <SelectContent>
-                    {niveaux.map((n) => (
-                      <SelectItem key={n.id} value={n.nom}>{n.nom}</SelectItem>
+                    {(() => {
+                      const classNiveau = studentsInClasse[0]?.niveau || "";
+                      if (bulkDecision === "PASSAGE") {
+                        const next = nextNiveauName(classNiveau, niveaux);
+                        return next ? [next] : [];
+                      }
+                      if (bulkDecision === "REDOUBLEMENT") {
+                        return classNiveau ? [classNiveau] : [];
+                      }
+                      return niveaux.map((n) => n.nom);
+                    })().map((nom) => (
+                      <SelectItem key={nom} value={nom}>{nom}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -730,9 +832,16 @@ export default function AnneeScolairePage() {
                 motif: "",
               }));
               bulkCreatePassagesMutation.mutate({ passages: passagesList }, {
-                onSuccess: () => setBulkPassageOpen(false),
+                onSuccess: () => { toast.success(`Passage en masse appliqué à ${passagesList.length} élève(s)`); setBulkPassageOpen(false); },
+                onError: (err: any) => toast.error(err?.response?.data?.message || err?.message || "Erreur lors du traitement en masse"),
               });
-            }} disabled={bulkCreatePassagesMutation.isPending || !bulkClasse || studentsInClasse.length === 0}>
+            }} disabled={
+              bulkCreatePassagesMutation.isPending
+              || !bulkClasse
+              || studentsInClasse.length === 0
+              || (bulkDecision === "PASSAGE" && !nextNiveauName(studentsInClasse[0]?.niveau || "", niveaux))
+              || ((bulkDecision === "PASSAGE" || bulkDecision === "REDOUBLEMENT") && !bulkNouveauNiveau)
+            }>
               {bulkCreatePassagesMutation.isPending ? "Traitement..." : `Appliquer a ${studentsInClasse.length} eleve(s)`}
             </Button>
           </DialogFooter>

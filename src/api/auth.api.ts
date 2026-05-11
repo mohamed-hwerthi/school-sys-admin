@@ -3,6 +3,7 @@ import type {
   LoginRequest,
   LoginResponse,
   AuthUser,
+  MeResponse,
   RefreshTokenRequest,
   Enable2FAResponse,
   Verify2FALoginRequest,
@@ -25,8 +26,14 @@ export const authApi = {
   },
 
   getMe: async (): Promise<AuthUser> => {
-    const response = await api.get<AuthUser>("/auth/me");
-    return response.data;
+    const response = await api.get<MeResponse>("/auth/me");
+    const { user, permissions, scopedClasseIds, scopedStudentIds } = response.data;
+    return {
+      ...user,
+      permissions,
+      scopedClasseIds,
+      scopedStudentIds,
+    };
   },
 
   forgotPassword: async (email: string): Promise<string> => {

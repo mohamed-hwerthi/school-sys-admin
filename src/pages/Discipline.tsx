@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { PermissionGate } from "@/components/auth/Gates";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -309,22 +310,24 @@ export default function DisciplinePage() {
           <p className="text-sm text-muted-foreground mt-0.5">Gerez les incidents disciplinaires et les sanctions</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" className="gap-1.5" onClick={() => {
-            setSanctionForm({ eleveId: 0, incidentId: undefined, typeSanction: "AVERTISSEMENT", description: "", dateDebut: new Date().toISOString().split("T")[0], dateFin: "", notifieParent: false });
-            setSanctionNiveau("");
-            setSanctionClasse("");
-            setSanctionFormOpen(true);
-          }}>
-            <Gavel className="h-4 w-4" />
-            Sanction
-          </Button>
-          <Button size="sm" className="gap-1.5 bg-gradient-primary shadow-btn" onClick={() => {
-            setIncidentForm({ titre: "", date: new Date().toISOString().split("T")[0], type: "AUTRE", description: "", gravite: "LEGERE", lieu: "", elevesImpliques: [], signaleParId: undefined });
-            setIncidentFormOpen(true);
-          }}>
-            <Plus className="h-4 w-4" />
-            Signaler un incident
-          </Button>
+          <PermissionGate perms={["WRITE_DISCIPLINE"]}>
+            <Button variant="outline" size="sm" className="gap-1.5" onClick={() => {
+              setSanctionForm({ eleveId: 0, incidentId: undefined, typeSanction: "AVERTISSEMENT", description: "", dateDebut: new Date().toISOString().split("T")[0], dateFin: "", notifieParent: false });
+              setSanctionNiveau("");
+              setSanctionClasse("");
+              setSanctionFormOpen(true);
+            }}>
+              <Gavel className="h-4 w-4" />
+              Sanction
+            </Button>
+            <Button size="sm" className="gap-1.5 bg-gradient-primary shadow-btn" onClick={() => {
+              setIncidentForm({ titre: "", date: new Date().toISOString().split("T")[0], type: "AUTRE", description: "", gravite: "LEGERE", lieu: "", elevesImpliques: [], signaleParId: undefined });
+              setIncidentFormOpen(true);
+            }}>
+              <Plus className="h-4 w-4" />
+              Signaler un incident
+            </Button>
+          </PermissionGate>
         </div>
       </motion.div>
 

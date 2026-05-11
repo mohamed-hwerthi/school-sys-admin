@@ -16,6 +16,7 @@ import {
   Send,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { PermissionGate } from "@/components/auth/Gates";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -237,14 +238,16 @@ export default function AnnoncesPage() {
               ))}
             </SelectContent>
           </Select>
-          <Button variant="outline" onClick={() => setShowSmsDialog(true)}>
-            <MessageSquare className="me-2 h-4 w-4" />
-            {t("announcements.sendSms")}
-          </Button>
-          <Button onClick={handleOpenCreate}>
-            <Plus className="me-2 h-4 w-4" />
-            {t("announcements.newAnnouncement")}
-          </Button>
+          <PermissionGate perms={["MANAGE_COMMUNICATION", "WRITE_MESSAGES"]}>
+            <Button variant="outline" onClick={() => setShowSmsDialog(true)}>
+              <MessageSquare className="me-2 h-4 w-4" />
+              {t("announcements.sendSms")}
+            </Button>
+            <Button onClick={handleOpenCreate}>
+              <Plus className="me-2 h-4 w-4" />
+              {t("announcements.newAnnouncement")}
+            </Button>
+          </PermissionGate>
         </div>
       </div>
 
@@ -309,23 +312,25 @@ export default function AnnoncesPage() {
                 </div>
               </CardContent>
               <CardFooter className="flex justify-end gap-2 pt-0">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleOpenEdit(annonce)}
-                >
-                  <Edit className="me-1 h-3 w-3" />
-                  {t("common.edit")}
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-destructive hover:text-destructive"
-                  onClick={() => handleDelete(annonce.id)}
-                >
-                  <Trash2 className="me-1 h-3 w-3" />
-                  {t("common.delete")}
-                </Button>
+                <PermissionGate perms={["MANAGE_COMMUNICATION", "WRITE_MESSAGES"]}>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleOpenEdit(annonce)}
+                  >
+                    <Edit className="me-1 h-3 w-3" />
+                    {t("common.edit")}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-destructive hover:text-destructive"
+                    onClick={() => handleDelete(annonce.id)}
+                  >
+                    <Trash2 className="me-1 h-3 w-3" />
+                    {t("common.delete")}
+                  </Button>
+                </PermissionGate>
               </CardFooter>
             </Card>
           ))}

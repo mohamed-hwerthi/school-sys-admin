@@ -20,7 +20,7 @@ const SEGMENT_LABELS: Record<string, string> = {
   enseignants: "Enseignants",
   niveaux: "Niveaux",
   classes: "Classes",
-  modules: "Modules",
+  modules: "Matières",
   examens: "Examens",
   notes: "Notes",
   bulletins: "Bulletins",
