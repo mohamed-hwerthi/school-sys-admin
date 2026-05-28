@@ -8,6 +8,7 @@
  */
 
 const RESERVED_SUBDOMAINS = new Set(["www", "app", "api", "admin"]);
+const RESERVED_HOSTNAMES = new Set(["schooly.learnup.tn"]);
 
 /**
  * Returns the school slug if the current hostname is `slug.something`,
@@ -16,7 +17,9 @@ const RESERVED_SUBDOMAINS = new Set(["www", "app", "api", "admin"]);
 export function getSubdomainSlug(): string | null {
   if (typeof window === "undefined") return null;
   const host = window.location.hostname;
-  if (host === "localhost" || /^\d+\.\d+\.\d+\.\d+$/.test(host)) return null;
+  if (host === "learnup.tn" || /^\d+\.\d+\.\d+\.\d+$/.test(host)) return null;
+  if (host === "learnup" || /^\d+\.\d+\.\d+\.\d+$/.test(host)) return null;
+  if (RESERVED_HOSTNAMES.has(host)) return null;
 
   const parts = host.split(".");
   if (parts.length < 2) return null;
