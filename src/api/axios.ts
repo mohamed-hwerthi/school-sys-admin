@@ -12,6 +12,7 @@ const api = axios.create({
 // Request interceptor — attach tenant + auth token
 api.interceptors.request.use((config) => {
   // Multi-tenant header — prefer the logged-in user's tenant; fall back to build-time default
+  console.log("API request to", config.url);
   let tenantId: string | undefined = env.TENANT_ID;
   try {
     const storedUser = localStorage.getItem("user");
