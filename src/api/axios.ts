@@ -2,7 +2,7 @@ import axios from "axios";
 import env from "@/config/env";
 
 const api = axios.create({
-  baseURL: env.API_URL,
+  baseURL: "https://schooly.learnup.tn/api",
   timeout: 10000,
   headers: {
     "Content-Type": "application/json",
