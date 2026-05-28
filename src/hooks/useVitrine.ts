@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { vitrinePublicApi } from "@/api/vitrine.api";
+import { normalizeVitrinePublicData } from "@/lib/vitrine-defaults";
 
 /**
  * Hook for public vitrine data (no auth).
@@ -7,7 +8,10 @@ import { vitrinePublicApi } from "@/api/vitrine.api";
 export function useVitrine(slug: string | undefined, preview = false) {
   return useQuery({
     queryKey: ["vitrine", slug, preview ? "preview" : "public"],
-    queryFn: () => vitrinePublicApi.getFullVitrine(slug!, { preview }),
+    queryFn: async () => {
+      const data = await vitrinePublicApi.getFullVitrine(slug!, { preview });
+      return normalizeVitrinePublicData(data);
+    },
     enabled: !!slug,
     staleTime: preview ? 0 : 10 * 60 * 1000,
   });
