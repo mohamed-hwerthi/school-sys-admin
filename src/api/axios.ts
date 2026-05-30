@@ -2,7 +2,7 @@ import axios from "axios";
 import env from "@/config/env";
 
 const api = axios.create({
-  baseURL: env.API_URL,
+  baseURL: "https://schooly.learnup.tn/api",
   timeout: 10000,
   headers: {
     "Content-Type": "application/json",
@@ -12,7 +12,7 @@ const api = axios.create({
 // Request interceptor — attach tenant + auth token
 api.interceptors.request.use((config) => {
   // Multi-tenant header — prefer the logged-in user's tenant; fall back to build-time default
-  console.log("API request to", env.API_URL, "with config", config);
+  
   let tenantId: string | undefined = env.TENANT_ID;
   try {
     const storedUser = localStorage.getItem("user");
