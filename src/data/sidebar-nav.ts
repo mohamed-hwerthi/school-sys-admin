@@ -107,6 +107,7 @@ export const sidebarSections: NavSection[] = [
     roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR"],
     items: [
       { title: "Enseignants", titleKey: "nav.teachers", icon: UserCog, url: "/dashboard/enseignants" },
+      { title: "Personnel", titleKey: "nav.personnel", icon: Users, url: "/dashboard/personnel" },
       { title: "Affectations", titleKey: "nav.assignments", icon: ClipboardList, url: "/dashboard/affectations" },
       { title: "Contrats & Congés", titleKey: "nav.contractsLeaves", icon: Briefcase, url: "/dashboard/contrats" },
       { title: "Paie", titleKey: "nav.payroll", icon: Banknote, url: "/dashboard/rh/paie" },
